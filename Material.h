@@ -159,7 +159,7 @@ Vector3f Material::eval(const Vector3f& wi, const Vector3f& wo, const Vector3f& 
 			Vector3f half = wi.normalize() + wo.normalize();
 			half = half.normalize();
 			Vector3f N = normal.normalize();
-			res = (half - N).getLen() < 1e-3 ? kd : Vector3f(0);
+			res = vec::dotProduct(half, N) > 1.0f - 1e-3 ? kd : Vector3f(0);
 			//res = Vector3f(1);
 		}break;
 		case MaterialType::MICROFACET:
