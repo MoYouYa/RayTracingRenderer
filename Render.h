@@ -17,6 +17,7 @@ private:
 
 	//Vector3f WhittedStylePathTracing(Scene& scene, Ray& ray, unsigned int bounce);
 
+	//all the wi ,wo and normal are facing the same hemisphere
 	Vector3f pathTracing(Scene& scene, Ray& ray);
 
 	Vector3f bidirectionalPathTracing(Scene& scene, Ray& ray) {

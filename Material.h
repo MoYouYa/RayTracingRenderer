@@ -67,6 +67,7 @@ public:
 	float getRoughness()const { return roughness; }
 	float getSpecularExponent()const { return specularExponent; }
 
+	//this wi is pointing to the target point
 	Vector3f getReflectVector(const Vector3f& wi,const Vector3f& normal) const{
 		Vector3f i = wi.normalize();
 		Vector3f n = normal.normalize();
@@ -213,7 +214,7 @@ Vector3f Material::sample(const Vector3f& wi, const Vector3f& normal) const {
 		}break;
 		case MaterialType::SPECULAR:
 		{
-			wo = getReflectVector(wi,normal);
+			wo = getReflectVector(-wi,normal);
 		}break;
 		case MaterialType::MICROFACET:
 		{
