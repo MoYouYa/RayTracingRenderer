@@ -31,9 +31,9 @@ private:
 
 	void deleteNode(BVHNode* node);
 
-	Intersection intersect(const Ray& ray, BVHNode* root);
+	Intersection intersect(const Ray& ray, BVHNode* root) const;
 
-	void getSample(BVHNode* root, Intersection& inter, float& pdf, float& resArea);
+	void getSample(BVHNode* root, Intersection& inter, float& pdf, float& resArea)const;
 public:
 	BVH() { root = nullptr; }
 
@@ -44,14 +44,16 @@ public:
 		root = selfBuildBVH(objs);
 	}
 
-	Intersection intersect(const Ray& ray) { return intersect(ray, this->root); }
+	Intersection intersect(const Ray& ray) const{ return intersect(ray, this->root); }
 
 	Bound3 getBound() { return root->bound; }
 
-	void sample(Intersection& inter, float& pdf, float& resArea) { getSample(root, inter, pdf, resArea); }
+	void sample(Intersection& inter, float& pdf, float& resArea)const { getSample(root, inter, pdf, resArea); }
 
 	~BVH() { clear(); }
 };
+
+#pragma region Function implementation
 
 void BVH::deleteNode(BVHNode* node) {
 	if (node == nullptr)return;
@@ -116,7 +118,7 @@ BVHNode* BVH::selfBuildBVH(std::vector<Object*>& objs) {
 	return root;
 }
 
-Intersection BVH::intersect(const Ray& ray, BVHNode* root) {
+Intersection BVH::intersect(const Ray& ray, BVHNode* root)const {
 	Intersection inter;
 	if (root->bound.intersect(ray)) {
 		if (root->object != nullptr) {
@@ -132,7 +134,7 @@ Intersection BVH::intersect(const Ray& ray, BVHNode* root) {
 	return inter;
 }
 
-void BVH::getSample(BVHNode* root, Intersection& inter, float& pdf, float& resArea) {
+void BVH::getSample(BVHNode* root, Intersection& inter, float& pdf, float& resArea) const {
 	if (root->left == nullptr && root->right == nullptr) {
 		resArea -= root->object->getArea();
 		if (resArea < 1e-3) {
@@ -146,3 +148,5 @@ void BVH::getSample(BVHNode* root, Intersection& inter, float& pdf, float& resAr
 		getSample(root->right, inter, pdf, resArea);
 	}
 }
+
+#pragma endregion

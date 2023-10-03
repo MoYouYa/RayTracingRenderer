@@ -18,12 +18,14 @@ public:
 		return *this;
 	}
 
-	Vector3f getCenterPos() { return min * 0.5 + max * 0.5; }
+	Vector3f getCenterPos() const{ return min * 0.5 + max * 0.5; }
 
-	bool intersect(const Ray& ray);
+	bool intersect(const Ray& ray)const;
 };
 
-bool Bound3::intersect(const Ray& ray) {
+#pragma region Function implementation
+
+bool Bound3::intersect(const Ray& ray) const {
 	Vector3f pos = ray.startPos;
 	Vector3f dir = ray.dir.normalize();
 
@@ -43,3 +45,4 @@ bool Bound3::intersect(const Ray& ray) {
 	float tmax = tmaxx < tmaxy ? (tmaxx < tmaxz ? tmaxx : tmaxz) : (tmaxy < tmaxz ? tmaxy : tmaxz);
 	return tmin <= tmax;
 }
+#pragma endregion

@@ -97,13 +97,7 @@ public:
 	float getArea() { return area; }
 
 	Intersection intersect(const Ray& ray){ 
-		try { 
-			return bvh->intersect(ray); 
-		}
-		catch (std::exception e) {
-			e.what();
-		}
-		return Intersection();
+		return bvh->intersect(ray); 
 	}
 
 	void sample(Intersection& inter, float& pdf) {
@@ -123,6 +117,8 @@ public:
 		delete bvh;
 	}
 };
+
+#pragma region Function implementation
 
 Intersection Trangle::intersect(const Ray& ray) {
 	Intersection inter;
@@ -171,19 +167,5 @@ void Trangle::sample(Intersection& inter, float& pdf) {
 	inter.object = this;
 	pdf = 1.0f / area;
 }
-//Intersection TrangleMesh::intersect(Ray& ray) {
-//	Intersection inter;
-//	for (int i = 0; i < trangles.get()->size(); i++) {
-//		Object* trangle = (*trangles.get())[i];
-//		inter = trangle->intersect(ray);
-//		if (inter.hit) {
-//			inter.object = this;
-//			break;
-//		}
-//	}
-//	return inter;
-//}
 
-//void TrangleMesh::computeBound() {
-//	bound = bvh->getBound();
-//}
+#pragma endregion

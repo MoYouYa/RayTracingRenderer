@@ -82,7 +82,7 @@ void main() {
 	Render renderer;
 	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
 	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight");
-	renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 128, "images/sphereLight");
+	renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/sphereLight");
 
 
 
