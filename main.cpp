@@ -40,9 +40,13 @@ void main() {
 
 	Sphere* sphereLight = new Sphere( whiteLightMaterial, Vector3f(256,256 , -256), 20);
 
-	std::vector<Vector3f> plate = { Vector3f(256-32,1,-256-32),Vector3f(256 + 32,1,-256 - 32),Vector3f(256-32,1,-256+32),Vector3f(256 + 32,1,-256+32) };
-	std::vector<unsigned int> plateLightIndices = {0,2,1,3,1,2 };
+	std::vector<Vector3f> plate = { Vector3f(256-32,20,-256-32),Vector3f(256 + 32,20,-256 - 32),Vector3f(256-32,20,-256+32),Vector3f(256 + 32,20,-256+32) };
+	std::vector<unsigned int> plateLightIndices = {0,1,2,3,2,1 };
 	TrangleMesh* plateLight = new TrangleMesh(whiteLightMaterial, &plate, &plateLightIndices);
+
+	std::vector<Vector3f> plateBack = { Vector3f(256 - 32,20.1f,-256 - 32),Vector3f(256 + 32,20.1f,-256 - 32),Vector3f(256 - 32,20.1f,-256 + 32),Vector3f(256 + 32,20.1f,-256 + 32) };
+	std::vector<unsigned int> plateLightBackIndices = { 0,2,1,3,1,2 };
+	TrangleMesh* plateLightBack= new TrangleMesh(whiteDiffuseMaterial, &plateBack, &plateLightBackIndices);
 
 
 	Sphere* redSphere= new Sphere(redDiffuseMaterial, Vector3f(256, 512-64, -256), 32);
@@ -58,8 +62,9 @@ void main() {
 
 	Scene scene(camera);
 
-	scene.addObject((Object*)sphereLight);
-	//scene.addObject((Object*)plateLight);
+	//scene.addObject((Object*)sphereLight);
+	scene.addObject((Object*)plateLight);
+	scene.addObject((Object*)plateLightBack);
 
 	scene.addObject((Object*)Back);
 	scene.addObject((Object*)Top);
@@ -81,8 +86,9 @@ void main() {
 
 	Render renderer;
 	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
-	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight");
-	renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 64, "images/sphereLight");
+	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall");
+	renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 1, "images/plateLight_FacetoWall_BDPT");
+	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/sphereLight");
 
 
 

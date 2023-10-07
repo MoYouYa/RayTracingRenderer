@@ -20,9 +20,16 @@ private:
 	//all the wi ,wo and normal are facing the same hemisphere
 	Vector3f pathTracing(Scene& scene, Ray& ray);
 
-	Vector3f bidirectionalPathTracing(Scene& scene, Ray& ray) {
-		return Vector3f();
-	}
+	std::vector<LightPoint*> getLightPoints(Scene& scene);
+
+	void getLightPoints(Scene& scene, std::vector<LightPoint*>& lightPoints);
+
+	std::vector<CameraPoint*> getCameraPoints(Scene& scene, Ray& ray);
+
+	void getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoints);
+
+
+	Vector3f bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS=false);
 public:
 	Render() {}
 
@@ -139,6 +146,262 @@ Vector3f Render::pathTracing(Scene& scene, Ray& ray) {
 			}
 		}
 	}
+	return res;
+}
+
+std::vector<LightPoint*> Render::getLightPoints(Scene& scene) {
+	std::vector<LightPoint*> lightPoints;
+
+	//sample a light
+	Intersection startInter;
+	float startPdf;
+	scene.samplingLight(startInter, startPdf);
+	if (startInter.object == nullptr || !startInter.object->getMaterial()->hasEmission()) {
+		return lightPoints;
+	}
+	lightPoints.emplace_back(new LightPoint(startInter.object, startInter.postion, startInter.normal.normalize(), startInter.object->getMaterial()->getEmission(), startPdf));
+
+	if (getRandomFloat() < 0.6f) {
+		getLightPoints(scene, lightPoints);
+	}
+	return lightPoints;
+}
+
+void Render::getLightPoints(Scene& scene, std::vector<LightPoint*>& lightPoints) {
+	const LightPoint* point = lightPoints.back();
+	Vector3f wi, wo, e;
+	float pdf;
+	if (lightPoints.size() == 1) {
+		wo = point->normal;
+		pdf = 1.0f / MY_PI;
+		e = Vector3f(1 / MY_PI);
+	}
+	else {
+		wi = (lightPoints[lightPoints.size() - 2]->pos - point->pos).normalize();
+		wo = point->obj->getMaterial()->sample(wi, point->normal).normalize();
+		pdf = point->obj->getMaterial()->pdf(wi, wo, point->normal);
+		e = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::abs(vec::dotProduct(wo, point->normal));
+	}
+
+	Ray ray(point->pos, wo);
+
+	Intersection inter = scene.intersect(ray);
+	if (!inter.hit || inter.object->getMaterial()->hasEmission()) {
+		return;
+	}
+
+	lightPoints.emplace_back(new LightPoint(inter.object, inter.postion, inter.normal.normalize(), point->emission * e, point->pdf * pdf * 0.6f));
+
+	if (getRandomFloat() < 0.6f) {
+		getLightPoints(scene, lightPoints);
+	}
+}
+
+std::vector<CameraPoint*> Render::getCameraPoints(Scene& scene, Ray& ray) {
+	std::vector<CameraPoint*> cameraPoints;
+
+	//get the look point
+	cameraPoints.emplace_back(new CameraPoint(nullptr, ray.startPos, ray.dir.normalize(), Vector3f(1.0f), 1.0f));
+
+	if (getRandomFloat() < 0.6f) {
+		getCameraPoints(scene, cameraPoints);
+	}
+
+	return cameraPoints;
+}
+
+void Render::getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoints) {
+	const CameraPoint* point = cameraPoints.back();
+	Vector3f wi, wo, kd;
+	float pdf;
+	if (cameraPoints.size() == 1) {
+		wo = point->normal;
+		pdf = 1.0f;
+		kd = Vector3f(1.0f);
+	}
+	else {
+		wi = (cameraPoints[cameraPoints.size() - 2]->pos - point->pos).normalize();
+		wo = point->obj->getMaterial()->sample(wi, point->normal).normalize();
+		pdf = point->obj->getMaterial()->pdf(wi, wo, point->normal);
+		kd = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::abs(vec::dotProduct(wo, point->normal));
+	}
+
+	Ray ray(point->pos, wo);
+
+	Intersection  inter = scene.intersect(ray);
+	if (!inter.hit || inter.object->getMaterial()->hasEmission()) {
+		return;
+	}
+
+	cameraPoints.emplace_back(new CameraPoint(inter.object, inter.postion, inter.normal.normalize(), point->kd * kd, point->pdf * pdf * 0.6f));
+
+	if (getRandomFloat() < 0.6f) {
+		getCameraPoints(scene, cameraPoints);
+	}
+}
+
+Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
+	Vector3f res(0);
+
+	std::vector<LightPoint*> lightPoints = getLightPoints(scene);
+	std::vector<CameraPoint*> cameraPoints = getCameraPoints(scene, ray);
+	int S = lightPoints.size();
+	int T = cameraPoints.size();
+
+	std::vector<float> ps(S);
+	std::vector<float> pt(T);
+	std::vector<std::vector<float>> weight(S, std::vector<float>(T, 1.0f));
+
+	if (useMIS) {
+		for (int s = 0; s < S; s++) {
+			if (s == 0) {
+				ps[s] = lightPoints[s]->pdf;
+			}
+			else if (s == 1) {
+				Vector3f wo = (lightPoints[s]->pos - lightPoints[s - 1]->pos);
+				float distance = wo.getLen();
+				wo = wo.normalize();
+				ps[s] = 1.0f / MY_PI
+					* vec::dotProduct(wo, lightPoints[s - 1]->normal.normalize())
+					* vec::dotProduct(-wo, lightPoints[s]->normal.normalize())
+					/ distance / distance;
+			}
+			else {
+				Vector3f wi = (lightPoints[s - 2]->pos - lightPoints[s - 1]->pos);
+				Vector3f wo = (lightPoints[s]->pos - lightPoints[s - 1]->pos);
+				float distance = wo.getLen();
+				wo = wo.normalize();
+				ps[s] = lightPoints[s - 1]->obj->getMaterial()->pdf(wi, wo, lightPoints[s - 1]->normal.normalize())
+					* vec::dotProduct(wo, lightPoints[s - 1]->normal.normalize())
+					* vec::dotProduct(-wo, lightPoints[s]->normal.normalize())
+					/ distance / distance;
+			}
+		}
+		for (int t = 0; t < T; t++) {
+			if (t == 0) {
+				pt[t] = 1.0f;
+			}
+			else if (t == 1) {
+				Vector3f wo = (cameraPoints[t - 1]->pos - cameraPoints[t]->pos);
+				float distance = wo.getLen();
+				pt[t] = 1.0f / distance / distance;
+			}
+			else {
+				Vector3f wi = (cameraPoints[t]->pos - cameraPoints[t - 1]->pos);
+				float distance = wi.getLen();
+				wi = wi.normalize();
+				Vector3f wo = (cameraPoints[t - 2]->pos - cameraPoints[t - 1]->pos).normalize();
+				pt[t] = cameraPoints[t - 1]->obj->getMaterial()->pdf(wi, wo, cameraPoints[t - 1]->normal.normalize())
+					* vec::dotProduct(wi, cameraPoints[t - 1]->normal.normalize())
+					* vec::dotProduct(-wi, cameraPoints[t]->normal.normalize())
+					/ distance / distance;
+			}
+		}
+
+		for (int s = 0; s < S; s++) {
+			for (int t = 0; t < T; t++) {
+				if (s + t == 0) {
+					weight[s][t] = 1.0f;
+				}
+				else {
+					float ri = 1.0f;
+					float sumRi = 0.0f;
+					for (int i = s; i >= 0; i--) {
+						int j = t + (i - s);
+						if (j < 0) break;
+						ri *= ps[i] / pt[j];
+						sumRi += ri;
+					}
+					ri = 1.0f;
+					for (int i = t; i >= 0; i--) {
+						int j = s + (i - t);
+						if (j < 0) break;
+						ri *= pt[i] / ps[j];
+						sumRi += ri;
+					}
+					weight[s][t] = 1.0f / (1.0f + sumRi);
+				}
+			}
+		}
+
+		for (int len = 2; len <= S + T; len++) {
+			float sum = 0.0f;
+			for (int s = 0; s < S && s <= len - 2; s++) {
+				int t = len - 2 - s;
+				if (t >= T)continue;
+				sum += weight[s][t];
+			}
+			for (int s = 0; s < S && s <= len - 2; s++) {
+				int t = len - 2 - s;
+				if (t >= T)continue;
+				weight[s][t] /= sum;
+			}
+		}
+
+	}
+
+	for (int s = 0; s < S; s++) {
+		for (int t = 0; t < T; t++) {
+			// fs = f(xs-2, xs-1, xs),  ft = f(xs-1, xs, xs+1)
+			Vector3f fs, ft, connect;
+			float g = 1.0f;
+
+			Vector3f wi, wo, N;
+			if (s >= 0) {
+				if (t > 0) {
+					float distance;
+					wi = (lightPoints[s]->pos - cameraPoints[t]->pos);
+					distance = wi.getLen();
+					wi = wi.normalize();
+					wo = (cameraPoints[t - 1]->pos - cameraPoints[t]->pos).normalize();
+					N = cameraPoints[t]->normal.normalize();
+
+					ft = cameraPoints[t]->obj->getMaterial()->eval(wi, wo, N);
+					if (scene.checkConnectable(lightPoints[s]->pos, cameraPoints[t]->pos)) {
+						g /= distance * distance;
+						g *= vec::dotProduct(lightPoints[s]->normal.normalize(), -wi);
+						g *= vec::dotProduct(cameraPoints[t]->normal.normalize(), wi);
+					}
+					else {
+						g = 0.0f;
+					}
+				}
+				else {
+					float distance;
+					wi = (lightPoints[s]->pos - cameraPoints[t]->pos);
+					distance = wi.getLen();
+
+					ft = 1.0f;
+					if (scene.checkConnectable(lightPoints[s]->pos, cameraPoints[t]->pos)) {
+						g /= distance * distance;
+						g *= vec::dotProduct(lightPoints[s]->normal.normalize(), -wi);
+					}
+					else {
+						g = 0.0f;
+					}
+				}
+			}
+
+			if (s == 0) {
+				fs = 1.0f / MY_PI;
+				connect = fs * g * ft;
+			}
+			else {
+				wi = (lightPoints[s - 1]->pos - lightPoints[s]->pos).normalize();
+				wo = (cameraPoints[t]->pos - lightPoints[s]->pos).normalize();
+				N = lightPoints[s]->normal.normalize();
+				fs = lightPoints[s]->obj->getMaterial()->eval(wi, wo, N);
+				connect = fs * g * ft;
+			}
+
+			Vector3f contribution = lightPoints[s]->emission / lightPoints[s]->pdf * connect * cameraPoints[t]->kd / cameraPoints[t]->pdf;
+
+			float w = useMIS ? weight[s][t] : 1.0f;
+
+			res = res + contribution * w;// / (s + t + 1);
+		}
+	}
+
 	return res;
 }
 

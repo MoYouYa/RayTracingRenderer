@@ -44,6 +44,16 @@ public:
 
 	Intersection intersect(const Ray& ray) { return bvh->intersect(ray); }
 
+	//check point a is connected point b
+	bool checkConnectable(Vector3f a, Vector3f b,float ESP=1e-3) {
+		Ray ray(a, (b - a).normalize());
+		Intersection inter = intersect(ray);
+		if (inter.hit && std::abs(inter.distance - (b - a).getLen()) < 1e-3) {
+			return true;
+		}
+		return false;
+	}
+
 	//get lightEmissions and lightDirs ,this function is only used by WhittedStyleRayTracing
 	void lightPoint(const Intersection& inter, std::vector<Vector3f>& outLightEmissions, std::vector<Vector3f>& outLightDirs);
 
