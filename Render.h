@@ -161,7 +161,7 @@ std::vector<LightPoint*> Render::getLightPoints(Scene& scene) {
 	}
 	lightPoints.emplace_back(new LightPoint(startInter.object, startInter.postion, startInter.normal.normalize(), startInter.object->getMaterial()->getEmission(), startPdf));
 
-	if (getRandomFloat() < 0.6f) {
+	if (getRandomFloat() < 0.6f /*lightPoints.size()<5*/) {
 		getLightPoints(scene, lightPoints);
 	}
 	return lightPoints;
@@ -180,7 +180,7 @@ void Render::getLightPoints(Scene& scene, std::vector<LightPoint*>& lightPoints)
 		wi = (lightPoints[lightPoints.size() - 2]->pos - point->pos).normalize();
 		wo = point->obj->getMaterial()->sample(wi, point->normal).normalize();
 		pdf = point->obj->getMaterial()->pdf(wi, wo, point->normal);
-		e = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::abs(vec::dotProduct(wo, point->normal));
+		e = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::max(vec::dotProduct(wo, point->normal), 0.0001f);
 	}
 
 	Ray ray(point->pos, wo);
@@ -192,7 +192,7 @@ void Render::getLightPoints(Scene& scene, std::vector<LightPoint*>& lightPoints)
 
 	lightPoints.emplace_back(new LightPoint(inter.object, inter.postion, inter.normal.normalize(), point->emission * e, point->pdf * pdf * 0.6f));
 
-	if (getRandomFloat() < 0.6f) {
+	if (getRandomFloat() < 0.6f /*lightPoints.size()<5*/) {
 		getLightPoints(scene, lightPoints);
 	}
 }
@@ -203,7 +203,7 @@ std::vector<CameraPoint*> Render::getCameraPoints(Scene& scene, Ray& ray) {
 	//get the look point
 	cameraPoints.emplace_back(new CameraPoint(nullptr, ray.startPos, ray.dir.normalize(), Vector3f(1.0f), 1.0f));
 
-	if (getRandomFloat() < 0.6f) {
+	if (getRandomFloat() < 0.6f || cameraPoints.size()==1) {
 		getCameraPoints(scene, cameraPoints);
 	}
 
@@ -223,19 +223,23 @@ void Render::getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoin
 		wi = (cameraPoints[cameraPoints.size() - 2]->pos - point->pos).normalize();
 		wo = point->obj->getMaterial()->sample(wi, point->normal).normalize();
 		pdf = point->obj->getMaterial()->pdf(wi, wo, point->normal);
-		kd = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::abs(vec::dotProduct(wo, point->normal));
+		kd = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::max(vec::dotProduct(wo, point->normal),0.0001f);
 	}
 
 	Ray ray(point->pos, wo);
 
 	Intersection  inter = scene.intersect(ray);
-	if (!inter.hit || inter.object->getMaterial()->hasEmission()) {
+	if (!inter.hit) {
 		return;
 	}
 
 	cameraPoints.emplace_back(new CameraPoint(inter.object, inter.postion, inter.normal.normalize(), point->kd * kd, point->pdf * pdf * 0.6f));
 
-	if (getRandomFloat() < 0.6f) {
+	if (inter.object->getMaterial()->hasEmission()) {
+		return;
+	}
+
+	if (getRandomFloat() < 0.6f/*cameraPoints.size()<5*/) {
 		getCameraPoints(scene, cameraPoints);
 	}
 }
@@ -273,8 +277,8 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 				wo = wo.normalize();
 				ps[s] = lightPoints[s - 1]->obj->getMaterial()->pdf(wi, wo, lightPoints[s - 1]->normal.normalize())
 					* vec::dotProduct(wo, lightPoints[s - 1]->normal.normalize())
-					* vec::dotProduct(-wo, lightPoints[s]->normal.normalize())
-					/ distance / distance;
+					/** vec::dotProduct(-wo, lightPoints[s]->normal.normalize())*/
+					/ distance / distance*0.6f;
 			}
 		}
 		for (int t = 0; t < T; t++) {
@@ -293,15 +297,15 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 				Vector3f wo = (cameraPoints[t - 2]->pos - cameraPoints[t - 1]->pos).normalize();
 				pt[t] = cameraPoints[t - 1]->obj->getMaterial()->pdf(wi, wo, cameraPoints[t - 1]->normal.normalize())
 					* vec::dotProduct(wi, cameraPoints[t - 1]->normal.normalize())
-					* vec::dotProduct(-wi, cameraPoints[t]->normal.normalize())
-					/ distance / distance;
+					/** vec::dotProduct(-wi, cameraPoints[t]->normal.normalize())*/
+					/ distance / distance*0.6f;
 			}
 		}
 
 		for (int s = 0; s < S; s++) {
-			for (int t = 0; t < T; t++) {
-				if (s + t == 0) {
-					weight[s][t] = 1.0f;
+			for (int t = 0; t < T ; t++) {
+				if (s == -1) {
+					continue;
 				}
 				else {
 					float ri = 1.0f;
@@ -313,8 +317,8 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 						sumRi += ri;
 					}
 					ri = 1.0f;
-					for (int i = t; i >= 0; i--) {
-						int j = s + (i - t);
+					for (int i = t-1; i >= 0; i--) {
+						int j = s + (i - t+1);
 						if (j < 0) break;
 						ri *= pt[i] / ps[j];
 						sumRi += ri;
@@ -326,23 +330,27 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 
 		for (int len = 2; len <= S + T; len++) {
 			float sum = 0.0f;
+			int count = 0;
 			for (int s = 0; s < S && s <= len - 2; s++) {
 				int t = len - 2 - s;
 				if (t >= T)continue;
 				sum += weight[s][t];
+				count++;
 			}
 			for (int s = 0; s < S && s <= len - 2; s++) {
 				int t = len - 2 - s;
 				if (t >= T)continue;
 				weight[s][t] /= sum;
+				weight[s][t] = std::max(0.0f,std::min(weight[s][t], 1.0f));
 			}
 		}
 
 	}
 
-	for (int s = 0; s < S; s++) {
+	for (int s = -1; s < S; s++) {
 		for (int t = 0; t < T; t++) {
 			// fs = f(xs-2, xs-1, xs),  ft = f(xs-1, xs, xs+1)
+			if (s + t == -1)continue;
 			Vector3f fs, ft, connect;
 			float g = 1.0f;
 
@@ -359,8 +367,8 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 					ft = cameraPoints[t]->obj->getMaterial()->eval(wi, wo, N);
 					if (scene.checkConnectable(lightPoints[s]->pos, cameraPoints[t]->pos)) {
 						g /= distance * distance;
-						g *= vec::dotProduct(lightPoints[s]->normal.normalize(), -wi);
-						g *= vec::dotProduct(cameraPoints[t]->normal.normalize(), wi);
+						g *= std::max(vec::dotProduct(lightPoints[s]->normal.normalize(), -wi), 0.0001f);
+						g *= std::max(vec::dotProduct(cameraPoints[t]->normal.normalize(), wi), 0.0001f);
 					}
 					else {
 						g = 0.0f;
@@ -371,19 +379,31 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 					wi = (lightPoints[s]->pos - cameraPoints[t]->pos);
 					distance = wi.getLen();
 
-					ft = 1.0f;
+					ft = std::powf(vec::dotProduct(wi, cameraPoints[t]->normal.normalize()), 2.0f);
 					if (scene.checkConnectable(lightPoints[s]->pos, cameraPoints[t]->pos)) {
 						g /= distance * distance;
-						g *= vec::dotProduct(lightPoints[s]->normal.normalize(), -wi);
+						g *= std::max(vec::dotProduct(lightPoints[s]->normal.normalize(), -wi),0.0001f);
 					}
 					else {
 						g = 0.0f;
 					}
 				}
 			}
-
-			if (s == 0) {
-				fs = 1.0f / MY_PI;
+			if (s == -1) {
+				if (t > 0 && cameraPoints[t]->obj->getMaterial()->hasEmission()) {
+					connect = cameraPoints[t]->obj->getMaterial()->getEmission();
+					//±ðÍüÁË¾àÀëË¥¼õÏî
+					if (t > 1) {
+						float distance = (cameraPoints[t]->pos - cameraPoints[t - 1]->pos).getLen();
+						connect = connect / distance / distance;
+					}
+				}
+				else {
+					connect = Vector3f(0);
+				}
+			}
+			else if (s == 0) {
+				fs = 1.0f;
 				connect = fs * g * ft;
 			}
 			else {
@@ -393,14 +413,20 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 				fs = lightPoints[s]->obj->getMaterial()->eval(wi, wo, N);
 				connect = fs * g * ft;
 			}
+			Vector3f contribution = (s == -1 ? 1.0f : lightPoints[s]->emission / lightPoints[s]->pdf) * connect * cameraPoints[t]->kd / cameraPoints[t]->pdf;
 
-			Vector3f contribution = lightPoints[s]->emission / lightPoints[s]->pdf * connect * cameraPoints[t]->kd / cameraPoints[t]->pdf;
+			float w = useMIS ? (s >= 0 ? weight[s][t] : 1.0f ) : 1.0f / float(s + t + 1 > 1 ? s + t + 1 : 1);
 
-			float w = useMIS ? weight[s][t] : 1.0f;
+			if ((contribution * w).x > 1.0f) {
+				res = res + Vector3f(0);
+			}
 
 			res = res + contribution * w;// / (s + t + 1);
+
 		}
 	}
+
+
 
 	return res;
 }
@@ -448,9 +474,10 @@ void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned
 				{
 					Vector3f color(0);
 					for (int k = 0; k < spp; k++) {
-						color = color + bidirectionalPathTracing(scene, ray);
+						color = color + bidirectionalPathTracing(scene, ray,false);
 					}
 					color = color / (float)spp;
+					//if (color.x > 1 && color.y > 1 && color.z > 1)std::cout << color.x <<" , " << color.y<<" , " << color.z << "\n";
 					(*buffer)[i * height + j] = color;
 				}break;
 				}

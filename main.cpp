@@ -44,7 +44,7 @@ void main() {
 	std::vector<unsigned int> plateLightIndices = {0,1,2,3,2,1 };
 	TrangleMesh* plateLight = new TrangleMesh(whiteLightMaterial, &plate, &plateLightIndices);
 
-	std::vector<Vector3f> plateBack = { Vector3f(256 - 32,20.1f,-256 - 32),Vector3f(256 + 32,20.1f,-256 - 32),Vector3f(256 - 32,20.1f,-256 + 32),Vector3f(256 + 32,20.1f,-256 + 32) };
+	std::vector<Vector3f> plateBack = { Vector3f(256 - 32,21,-256 - 32),Vector3f(256 + 32,21,-256 - 32),Vector3f(256 - 32,21,-256 + 32),Vector3f(256 + 32,21,-256 + 32) };
 	std::vector<unsigned int> plateLightBackIndices = { 0,2,1,3,1,2 };
 	TrangleMesh* plateLightBack= new TrangleMesh(whiteDiffuseMaterial, &plateBack, &plateLightBackIndices);
 
@@ -62,9 +62,9 @@ void main() {
 
 	Scene scene(camera);
 
-	//scene.addObject((Object*)sphereLight);
-	scene.addObject((Object*)plateLight);
-	scene.addObject((Object*)plateLightBack);
+	scene.addObject((Object*)sphereLight);
+	//scene.addObject((Object*)plateLight);
+	//scene.addObject((Object*)plateLightBack);
 
 	scene.addObject((Object*)Back);
 	scene.addObject((Object*)Top);
@@ -76,7 +76,7 @@ void main() {
 	scene.addObject((Object*)blueSphere);
 	scene.addObject((Object*)greenSphere);
 
-	scene.addObject((Object*)microfactSphere);
+	//scene.addObject((Object*)microfactSphere);
 
 	scene.addObject((Object*)specularSphere1);
 	scene.addObject((Object*)specularSphere2);
@@ -86,9 +86,10 @@ void main() {
 
 	Render renderer;
 	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
-	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall");
-	renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 1, "images/plateLight_FacetoWall_BDPT");
-	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/sphereLight");
+	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall_test");
+	//renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/plateLight_FacetoWall_BDPT_test");
+	renderer.render(scene, 256, 256, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/sphereLight_BDPT_s-1_t0_smaxn_tmaxn_diffuse_and_specular");
+	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 1, "images/sphereLight_test_onlydiffuse");
 
 
 
