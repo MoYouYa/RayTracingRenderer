@@ -28,8 +28,7 @@ private:
 
 	void getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoints);
 
-
-	Vector3f bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS=false);
+	Vector3f bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS=true);
 public:
 	Render() {}
 
@@ -252,101 +251,6 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 	int S = lightPoints.size();
 	int T = cameraPoints.size();
 
-	std::vector<float> ps(S);
-	std::vector<float> pt(T);
-	std::vector<std::vector<float>> weight(S, std::vector<float>(T, 1.0f));
-
-	if (useMIS) {
-		for (int s = 0; s < S; s++) {
-			if (s == 0) {
-				ps[s] = lightPoints[s]->pdf;
-			}
-			else if (s == 1) {
-				Vector3f wo = (lightPoints[s]->pos - lightPoints[s - 1]->pos);
-				float distance = wo.getLen();
-				wo = wo.normalize();
-				ps[s] = 1.0f / MY_PI
-					* vec::dotProduct(wo, lightPoints[s - 1]->normal.normalize())
-					* vec::dotProduct(-wo, lightPoints[s]->normal.normalize())
-					/ distance / distance;
-			}
-			else {
-				Vector3f wi = (lightPoints[s - 2]->pos - lightPoints[s - 1]->pos);
-				Vector3f wo = (lightPoints[s]->pos - lightPoints[s - 1]->pos);
-				float distance = wo.getLen();
-				wo = wo.normalize();
-				ps[s] = lightPoints[s - 1]->obj->getMaterial()->pdf(wi, wo, lightPoints[s - 1]->normal.normalize())
-					* vec::dotProduct(wo, lightPoints[s - 1]->normal.normalize())
-					/** vec::dotProduct(-wo, lightPoints[s]->normal.normalize())*/
-					/ distance / distance*0.6f;
-			}
-		}
-		for (int t = 0; t < T; t++) {
-			if (t == 0) {
-				pt[t] = 1.0f;
-			}
-			else if (t == 1) {
-				Vector3f wo = (cameraPoints[t - 1]->pos - cameraPoints[t]->pos);
-				float distance = wo.getLen();
-				pt[t] = 1.0f / distance / distance;
-			}
-			else {
-				Vector3f wi = (cameraPoints[t]->pos - cameraPoints[t - 1]->pos);
-				float distance = wi.getLen();
-				wi = wi.normalize();
-				Vector3f wo = (cameraPoints[t - 2]->pos - cameraPoints[t - 1]->pos).normalize();
-				pt[t] = cameraPoints[t - 1]->obj->getMaterial()->pdf(wi, wo, cameraPoints[t - 1]->normal.normalize())
-					* vec::dotProduct(wi, cameraPoints[t - 1]->normal.normalize())
-					/** vec::dotProduct(-wi, cameraPoints[t]->normal.normalize())*/
-					/ distance / distance*0.6f;
-			}
-		}
-
-		for (int s = 0; s < S; s++) {
-			for (int t = 0; t < T ; t++) {
-				if (s == -1) {
-					continue;
-				}
-				else {
-					float ri = 1.0f;
-					float sumRi = 0.0f;
-					for (int i = s; i >= 0; i--) {
-						int j = t + (i - s);
-						if (j < 0) break;
-						ri *= ps[i] / pt[j];
-						sumRi += ri;
-					}
-					ri = 1.0f;
-					for (int i = t-1; i >= 0; i--) {
-						int j = s + (i - t+1);
-						if (j < 0) break;
-						ri *= pt[i] / ps[j];
-						sumRi += ri;
-					}
-					weight[s][t] = 1.0f / (1.0f + sumRi);
-				}
-			}
-		}
-
-		for (int len = 2; len <= S + T; len++) {
-			float sum = 0.0f;
-			int count = 0;
-			for (int s = 0; s < S && s <= len - 2; s++) {
-				int t = len - 2 - s;
-				if (t >= T)continue;
-				sum += weight[s][t];
-				count++;
-			}
-			for (int s = 0; s < S && s <= len - 2; s++) {
-				int t = len - 2 - s;
-				if (t >= T)continue;
-				weight[s][t] /= sum;
-				weight[s][t] = std::max(0.0f,std::min(weight[s][t], 1.0f));
-			}
-		}
-
-	}
-
 	for (int s = -1; s < S; s++) {
 		for (int t = 0; t < T; t++) {
 			// fs = f(xs-2, xs-1, xs),  ft = f(xs-1, xs, xs+1)
@@ -413,9 +317,75 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS) {
 				fs = lightPoints[s]->obj->getMaterial()->eval(wi, wo, N);
 				connect = fs * g * ft;
 			}
+
+			float weight = 1.0f;
+			if (useMIS && g>1e-5) {
+				std::vector<float> pfs(s + t + 2);
+				std::vector<float> prs(s + t + 2);
+				std::vector<Vector3f> poss;
+				std::vector<Vector3f> normals;
+				std::vector<Object*> objs;
+
+				for (int i = 0; i <= s; i++) {
+					poss.emplace_back(lightPoints[i]->pos);
+					normals.emplace_back(lightPoints[i]->normal.normalize());
+					objs.emplace_back(lightPoints[i]->obj);
+				}
+				for (int i = t; i >= 0; i--) {
+					poss.emplace_back(cameraPoints[i]->pos);
+					normals.emplace_back(cameraPoints[i]->normal.normalize());
+					objs.emplace_back(cameraPoints[i]->obj);
+				}
+				pfs[0] = lightPoints[0]->pdf;
+				{
+					Vector3f dir = (poss[1] - poss[0]);
+					float distance = dir.getLen();
+					dir = dir.normalize();
+					float temp = vec::dotProduct(normals[0], dir) * vec::dotProduct(normals[1], -dir) / distance / distance;
+					pfs[1] = 1.0f / MY_PI * g;
+				}
+				for (int i = 2; i < s + t + 2 ; i++) {
+					Vector3f wi = (poss[i - 2] - poss[i - 1]).normalize();
+					Vector3f wo = poss[i] - poss[i - 1];
+					float distance = wo.getLen();
+					wo = wo.normalize();
+					Vector3f N = normals[i - 1];
+					Vector3f N2 = normals[i];
+					float temp = vec::dotProduct(-wo, N2) / distance / distance;
+					pfs[i] = objs[i - 1]->getMaterial()->pdf(wi, wo, N) * g * 0.6f;
+				}
+
+				prs[s + t + 2 - 1] = 1.0f;
+				{
+					float distance = (poss[s + t + 2 - 1] - poss[s + t + 2 - 2]).getLen();
+					prs[s + t + 2 - 2] = 1.0f / distance / distance;
+				}
+				for (int i = 0; i < s + t + 2 - 2; i++) {
+					Vector3f wi = (poss[i + 2] - poss[i + 1]).normalize();
+					Vector3f wo = (poss[i] - poss[i + 1]);
+					float distance = wo.getLen();
+					wo = wo.normalize();
+					Vector3f N = normals[i + 1];
+					Vector3f N2 = normals[i];
+					float temp = vec::dotProduct(-wo, N2) / distance / distance;
+					prs[i] = objs[i + 1]->getMaterial()->pdf(wi, wo, N) * temp * 0.6f;
+				}
+
+				float ri = 1.0f;
+				for (int i = s; i >= 0; i--) {
+					ri *= prs[i] / pfs[i];
+					weight += ri;
+				}
+				ri = 1.0f;
+				for (int i = s + 2; i < s + t + 2; i++) {
+					ri *= pfs[i] / prs[i];
+					weight += ri;
+				}
+				weight = 1.0f / weight;
+			}
 			Vector3f contribution = (s == -1 ? 1.0f : lightPoints[s]->emission / lightPoints[s]->pdf) * connect * cameraPoints[t]->kd / cameraPoints[t]->pdf;
 
-			float w = useMIS ? (s >= 0 ? weight[s][t] : 1.0f ) : 1.0f / float(s + t + 1 > 1 ? s + t + 1 : 1);
+			float w = useMIS ? (s >= 0 ? weight : 1.0f ) : 1.0f / float(s + t + 1 > 1 ? s + t + 1 : 1);
 
 			if ((contribution * w).x > 1.0f) {
 				res = res + Vector3f(0);
@@ -474,10 +444,9 @@ void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned
 				{
 					Vector3f color(0);
 					for (int k = 0; k < spp; k++) {
-						color = color + bidirectionalPathTracing(scene, ray,false);
+						color = color + bidirectionalPathTracing(scene, ray);
 					}
 					color = color / (float)spp;
-					//if (color.x > 1 && color.y > 1 && color.z > 1)std::cout << color.x <<" , " << color.y<<" , " << color.z << "\n";
 					(*buffer)[i * height + j] = color;
 				}break;
 				}

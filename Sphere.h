@@ -46,7 +46,7 @@ Intersection Sphere::intersect(const Ray& ray) {
 	}
 	float t1 = (-b + sqrtf(delta)) / 2 / a;
 	float t2 = (-b - sqrtf(delta)) / 2 / a;
-	if (t1 < 0) {
+	if (t1 < 1e-3) {
 		return inter;
 	}
 	if (t2 < 0) {

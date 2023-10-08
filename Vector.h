@@ -112,3 +112,9 @@ namespace vec {
 	}
 
 }
+
+namespace TEST {
+	inline void printVector3f(Vector3f v) {
+		std::cout << v.x << " , " << v.y << " , " << v.z << "\n";
+	}
+}

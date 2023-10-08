@@ -17,7 +17,7 @@ void main() {
 
 	Material* specularMaterial = new Material(MaterialType::SPECULAR, Vector3f(0),Vector3f(1));
 
-	Material* microfactMaterial0 = new Material(MaterialType::MICROFACET, Vector3f(0), Vector3f(0.6, 0.01, 0.01), Vector3f(0),0,0.5f);
+	Material* microfactMaterial0 = new Material(MaterialType::MICROFACET, Vector3f(0), Vector3f(0.6f, 0.01f, 0.01f), Vector3f(0.6f, 0.01f, 0.01f), 0, 0.5f);
 
 
 	std::vector<Vector3f> cube ={ 
@@ -62,9 +62,9 @@ void main() {
 
 	Scene scene(camera);
 
-	scene.addObject((Object*)sphereLight);
-	//scene.addObject((Object*)plateLight);
-	//scene.addObject((Object*)plateLightBack);
+	//scene.addObject((Object*)sphereLight);
+	scene.addObject((Object*)plateLight);
+	scene.addObject((Object*)plateLightBack);
 
 	scene.addObject((Object*)Back);
 	scene.addObject((Object*)Top);
@@ -76,7 +76,7 @@ void main() {
 	scene.addObject((Object*)blueSphere);
 	scene.addObject((Object*)greenSphere);
 
-	//scene.addObject((Object*)microfactSphere);
+	scene.addObject((Object*)microfactSphere);
 
 	scene.addObject((Object*)specularSphere1);
 	scene.addObject((Object*)specularSphere2);
@@ -88,8 +88,8 @@ void main() {
 	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
 	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall_test");
 	//renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/plateLight_FacetoWall_BDPT_test");
-	renderer.render(scene, 256, 256, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/sphereLight_BDPT_s-1_t0_smaxn_tmaxn_diffuse_and_specular");
-	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 1, "images/sphereLight_test_onlydiffuse");
+	renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 64, "images/plateLight_FacetoWall_BDPT_MIS_s-1_t0_smaxn_tmaxn_diffuse_and_specular_microfact");
+	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 64, "images/plateLight_FacetoWall_diffuse_and_specular_microfact");
 
 
 

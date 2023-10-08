@@ -23,14 +23,14 @@ private:
 	float DistributionGGX(const Vector3f& N, const Vector3f& H)const;
 
 	//Trowbridge-Reitz(GGX)模型 D(wh) 
-	float NormalDistributionFunction(const Vector3f& wh, const Vector3f& N) const;
+	/*float NormalDistributionFunction(const Vector3f& wh, const Vector3f& N) const;*/
 
 
 	//GGX模型 G(wi,wo)
 	float GeometrySmith(const Vector3f& N, const Vector3f& V, const Vector3f& L)const;
 
 	//GGX模型 G(wi,wo)
-	float ShadowingMasking(const Vector3f& wi,const Vector3f& wo,const Vector3f& N) const {
+	/*float ShadowingMasking(const Vector3f& wi,const Vector3f& wo,const Vector3f& N) const {
 		auto f = [&](const Vector3f& w) {
 			float cosValue = vec::dotProduct(w.normalize(), N.normalize());
 			float cos2 = cosValue * cosValue;
@@ -38,7 +38,7 @@ private:
 			return (-1.0f + std::sqrtf(1 + roughness * roughness * sin2 / cos2)) / 2.0f;
 		};
 		return 1.0f / (1.0f + f(wi) + f(wo));
-	}
+	}*/
 
 	// Compute Fresnel equatio
 	// \param I is the incident view direction
@@ -93,16 +93,16 @@ float Material::DistributionGGX(const Vector3f& N, const Vector3f& H)const {
 	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
 	denom = MY_PI * denom * denom;
 
-	return nom / std::max(denom, 0.0000001f); // prevent divide by zero for roughness=0.0 and NdotH=1.0
+	return nom / std::max(denom, 0.0001f); // prevent divide by zero for roughness=0.0 and NdotH=1.0
 }
 
-float Material::NormalDistributionFunction(const Vector3f& wh, const Vector3f& N) const {
-	float a2 = roughness * roughness;
-	float cosh = vec::dotProduct(wh.normalize(), N.normalize());
-	float cosh2 = cosh * cosh;
-	float sinh2 = 1.0f - cosh2;
-	return a2 / std::powf(a2 * cosh2 + sinh2, 2) / MY_PI;
-}
+//float Material::NormalDistributionFunction(const Vector3f& wh, const Vector3f& N) const {
+//	float a2 = roughness * roughness;
+//	float cosh = vec::dotProduct(wh.normalize(), N.normalize());
+//	float cosh2 = cosh * cosh;
+//	float sinh2 = 1.0f - cosh2;
+//	return a2 / std::powf(a2 * cosh2 + sinh2, 2) / MY_PI;
+//}
 
 float Material::GeometrySmith(const Vector3f& N, const Vector3f& V, const Vector3f& L)const
 {
@@ -160,7 +160,6 @@ Vector3f Material::eval(const Vector3f& wi, const Vector3f& wo, const Vector3f& 
 			half = half.normalize();
 			Vector3f N = normal.normalize();
 			res = vec::dotProduct(half, N) > 1.0f - 1e-3 ? kd : Vector3f(0);
-			//res = Vector3f(1);
 		}break;
 		case MaterialType::MICROFACET:
 		{
@@ -171,7 +170,15 @@ Vector3f Material::eval(const Vector3f& wi, const Vector3f& wo, const Vector3f& 
 			float g = GeometrySmith(normal.normalize(), wi.normalize(), wo.normalize());
 			float coso = vec::dotProduct(wo.normalize(), normal.normalize());
 			float cosi = vec::dotProduct(wi.normalize(), normal.normalize());
-			res = kd * (kr * d * g / 4.0f / coso / cosi);
+			res = ks * (kr * d * g / 4.0f / std::max(coso * cosi, 0.0001f)) + kd * (1 - kr) / MY_PI;
+			
+			//if(std::isnan(res.x)){
+			//	TEST::printVector3f(res);
+			//	float cosValue = vec::dotProduct(wo.normalize(), normal.normalize());
+			//	res = kd * (cosValue > 0.0f ? 1.0f / MY_PI : 0.0f);
+			//	TEST::printVector3f(res);
+			//}
+
 		}break;
 	}
 	return res;
@@ -244,7 +251,8 @@ float Material::pdf(const Vector3f& wi, const Vector3f& wo, const Vector3f& norm
 	case MaterialType::MICROFACET:
 	{
 		//todo
-		pdf = 0.5f / MY_PI;
+		pdf = 0.5f/MY_PI;
+		
 	}break;
 	}
 	return pdf;
