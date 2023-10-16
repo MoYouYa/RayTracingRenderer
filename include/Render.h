@@ -222,7 +222,7 @@ void Render::getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoin
 		wi = (cameraPoints[cameraPoints.size() - 2]->pos - point->pos).normalize();
 		wo = point->obj->getMaterial()->sample(wi, point->normal).normalize();
 		pdf = point->obj->getMaterial()->pdf(wi, wo, point->normal);
-		kd = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::max(vec::dotProduct(wo, point->normal),0.0001f);
+		kd = point->obj->getMaterial()->eval(wi, wo, point->normal) * std::max(vec::dotProduct(wo, point->normal), 0.0001f);
 	}
 
 	Ray ray(point->pos, wo);
