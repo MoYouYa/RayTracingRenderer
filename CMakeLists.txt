@@ -20,5 +20,11 @@ add_executable(Renderer
  include/Vector.h
 
 #source
+ src/BVH.cpp
  src/main.cpp
+ src/Material.cpp
+ src/Render.cpp
+ src/Scene.cpp
+ src/Sphere.cpp
+ src/Trangle.cpp
 )
