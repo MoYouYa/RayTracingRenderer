@@ -1,6 +1,7 @@
 #pragma once
-#include<opencv2/opencv.hpp>
 #include <fstream>
+#include <functional>
+#include <thread>
 #include "Scene.h"
 #include "Global.h"
 

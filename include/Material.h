@@ -1,4 +1,5 @@
 #pragma once
+#include<functional>
 #include "Global.h"
 #include "Vector.h"
 

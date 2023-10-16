@@ -1,7 +1,6 @@
-#include<opencv2/opencv.hpp>
-#include "Sphere.h"
-#include "Render.h"
-#include "Trangle.h"
+#include "../include/Sphere.h"
+#include "../include/Render.h"
+#include "../include/Trangle.h"
 
 void main() {
 
