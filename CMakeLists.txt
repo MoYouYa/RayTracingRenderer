@@ -12,6 +12,7 @@ add_executable(Renderer
  include/Material.h
  include/Matrix.h
  include/Object.h
+ include/Photon.h
  include/Ray.h
  include/Render.h
  include/Scene.h

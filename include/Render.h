@@ -4,6 +4,7 @@
 #include <thread>
 #include "Scene.h"
 #include "Global.h"
+#include "Photon.h"
 
 #pragma warning(disable : 4996)
 
@@ -30,6 +31,10 @@ private:
 	void getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoints);
 
 	Vector3f bidirectionalPathTracing(Scene& scene, Ray& ray,bool useMIS=true);
+
+	std::vector<Photon*> getPhotonMap();
+
+	Vector3f photonMapping(Scene& scene, Ray& ray,unsigned int minPhotonNum);
 public:
 	Render() {}
 
