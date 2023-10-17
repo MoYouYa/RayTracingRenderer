@@ -2,7 +2,6 @@
 #include<iostream>
 #include <vector>
 #include <cassert>
-#include "Object.h"
 #include "BVH.h"
 
 class Trangle :Object {

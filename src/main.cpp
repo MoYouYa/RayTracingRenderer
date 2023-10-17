@@ -1,6 +1,6 @@
-#include "../include/Sphere.h"
-#include "../include/Render.h"
-#include "../include/Trangle.h"
+#include "Sphere.h"
+#include "Render.h"
+#include "Trangle.h"
 
 void main() {
 
@@ -87,9 +87,9 @@ void main() {
 	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
 	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall_test");
 	//renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/plateLight_FacetoWall_BDPT_test");
-	//renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 64, "images/plateLight_FacetoWall_BDPT_s-1_t0_smaxn_tmaxn_diffuse_and_specular_microfact");
+	renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 16, "images/plateLight_FacetoWall_BDPT_s-1_t0_smaxn_tmaxn_diffuse_and_specular_microfact_new");
 	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 64, "images/plateLight_FacetoWall_diffuse_and_specular_microfact");
-	renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 4, "images/sphereLight_BDPT_MIS");
+	//renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 4, "images/sphereLight_BDPT_MIS");
 	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 4, "images/sphereLight");
 
 

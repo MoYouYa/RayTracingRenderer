@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include"Matrix.h"
-#include "Object.h"
 #include "BVH.h"
 
 struct Camera {

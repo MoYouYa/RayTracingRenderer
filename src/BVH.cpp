@@ -1,4 +1,4 @@
-#include "../include/BVH.h"
+#include "BVH.h"
 
 void BVH::deleteNode(BVHNode* node) {
 	if (node == nullptr)return;

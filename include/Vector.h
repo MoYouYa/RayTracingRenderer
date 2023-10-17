@@ -95,26 +95,26 @@ public:
 };
 
 namespace vec {
-	float dotProduct( Vector2f v0,  Vector2f v1) {
+	static inline float dotProduct( Vector2f v0,  Vector2f v1) {
 		return v0.x * v1.x + v0.y * v1.y;
 	}
 
-	float dotProduct( Vector3f v0,  Vector3f v1) {
+	static inline float dotProduct( Vector3f v0,  Vector3f v1) {
 		return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z;
 	}
 
-	float dotProduct(Vector4f v0, Vector4f v1) {
+	static inline float dotProduct(Vector4f v0, Vector4f v1) {
 		return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z + v0.w * v1.w;
 	}
 
-	Vector3f crossProduct( Vector3f v0,  Vector3f v1) {
+	static inline Vector3f crossProduct( Vector3f v0,  Vector3f v1) {
 		return Vector3f(v0.y * v1.z - v0.z * v1.y, v0.z * v1.x - v1.z * v0.x, v0.x * v1.y - v0.y * v1.x);
 	}
 
 }
 
 namespace TEST {
-	inline void printVector3f(Vector3f v) {
+	static inline void printVector3f(Vector3f v) {
 		std::cout << v.x << " , " << v.y << " , " << v.z << "\n";
 	}
 }

@@ -1,4 +1,4 @@
-#include "../include/Material.h"
+#include "Material.h"
 
 float Material::DistributionGGX(const Vector3f& N, const Vector3f& H)const {
 	float a = roughness * roughness;

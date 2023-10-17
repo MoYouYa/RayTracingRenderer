@@ -3,6 +3,8 @@ project(Renderer)
 
 set(CMAKE_CXX_STANDARD 11)
 
+include_directories(include/)
+
 add_executable(Renderer
 #include
  include/Bound3.h
@@ -21,11 +23,14 @@ add_executable(Renderer
  include/Vector.h
 
 #source
- src/BVH.cpp
  src/main.cpp
+ src/Bound3.cpp
+ src/BVH.cpp
  src/Material.cpp
  src/Render.cpp
  src/Scene.cpp
  src/Sphere.cpp
  src/Trangle.cpp
 )
+
+

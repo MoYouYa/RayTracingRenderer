@@ -1,4 +1,4 @@
-#include "../include/Scene.h"
+#include "Scene.h"
 
 void Scene::lightPoint(const Intersection& inter, std::vector<Vector3f>& outLightEmissions, std::vector<Vector3f>& outLightDirs) {
 	for (int i = 0; i < lights.size(); i++) {

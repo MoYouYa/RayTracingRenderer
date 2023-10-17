@@ -1,4 +1,4 @@
-#include "../include/Render.h"
+#include "Render.h"
 
 //Vector3f Render::WhittedStylePathTracing(Scene& scene, Ray& ray, unsigned int bounce) {
 //	Vector3f emission(0);
@@ -214,6 +214,36 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 	int S = lightPoints.size();
 	int T = cameraPoints.size();
 
+	//precompute the pfs(pfLights,pfCameras) and prs(prLights,prCameras)
+	//std::vector<float> pfLights, pfCameras;
+	//std::vector<float> prLights, prCameras;
+	//if (useMIS) {
+	//	pfLights.emplace_back(lightPoints[0]->pdf);
+	//	if(lightPoints.size()>=2){
+	//		float pdf;
+	//		Vector3f wi = lightPoints[1]->pos - lightPoints[0]->pos;
+	//		float distance = wi.getLen();
+	//		wi = wi.normalize();
+	//		pdf = 1.0f / MY_PI * vec::dotProduct(lightPoints[0]->normal.normalize(), wi) * vec::dotProduct(lightPoints[1]->normal.normalize(), -wi) / distance / distance;
+	//		pfLights.emplace_back(pdf);
+	//	}
+	//	if (lightPoints.size() > 2) {
+	//		for (int i = 2; i < lightPoints.size(); i++) {
+	//			Vector3f wi = (lightPoints[i - 2]->pos - lightPoints[i - 1]->pos).normalize();
+	//			Vector3f wo = lightPoints[i]->pos - lightPoints[i - 1]->pos;
+	//			float distance = wo.getLen();
+	//			wo = wo.normalize();
+	//			Vector3f N = lightPoints[i - 1]->normal.normalize();
+	//			Vector3f N2 = lightPoints[i]->normal.normalize();
+	//			float temp = vec::dotProduct(-wo, N2) / distance / distance;
+	//			float pdf = lightPoints[i - 1]->obj->getMaterial()->pdf(wi, wo, N) * temp * 0.6f;
+	//			pfLights.emplace_back(pdf);
+	//		}
+	//	}
+	//	if(cameraPoints.size())
+
+	//}
+
 	for (int s = -1; s < S; s++) {
 		for (int t = 0; t < T; t++) {
 			// fs = f(xs-2, xs-1, xs),  ft = f(xs-1, xs, xs+1)
@@ -305,7 +335,7 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					float distance = dir.getLen();
 					dir = dir.normalize();
 					float temp = vec::dotProduct(normals[0], dir) * vec::dotProduct(normals[1], -dir) / distance / distance;
-					pfs[1] = 1.0f / MY_PI * g;
+					pfs[1] = 1.0f / MY_PI * temp;
 				}
 				for (int i = 2; i < s + t + 2; i++) {
 					Vector3f wi = (poss[i - 2] - poss[i - 1]).normalize();
@@ -315,7 +345,7 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					Vector3f N = normals[i - 1];
 					Vector3f N2 = normals[i];
 					float temp = vec::dotProduct(-wo, N2) / distance / distance;
-					pfs[i] = objs[i - 1]->getMaterial()->pdf(wi, wo, N) * g * 0.6f;
+					pfs[i] = objs[i - 1]->getMaterial()->pdf(wi, wo, N) * temp * 0.6f;
 				}
 
 				prs[s + t + 2 - 1] = 1.0f;

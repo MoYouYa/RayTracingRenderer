@@ -1,4 +1,4 @@
-#include "../include/Sphere.h"
+#include "Sphere.h"
 
 Intersection Sphere::intersect(const Ray& ray) {
 	Intersection inter;

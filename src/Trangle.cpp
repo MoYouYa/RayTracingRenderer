@@ -1,4 +1,4 @@
-#include "../include/Trangle.h"
+#include "Trangle.h"
 
 Intersection Trangle::intersect(const Ray& ray) {
 	Intersection inter;
