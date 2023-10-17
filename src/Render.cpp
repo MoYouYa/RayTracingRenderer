@@ -195,7 +195,7 @@ void Render::getCameraPoints(Scene& scene, std::vector<CameraPoint*>& cameraPoin
 		return;
 	}
 
-	cameraPoints.emplace_back(new CameraPoint(inter.object, inter.postion, inter.normal.normalize(), point->kd * kd, point->pdf * pdf * 0.6f));
+	cameraPoints.emplace_back(new CameraPoint(inter.object, inter.postion, inter.normal.normalize(), point->kd * kd, point->pdf * pdf * (cameraPoints.size() == 1?1.0f:0.6f)));
 
 	if (inter.object->getMaterial()->hasEmission()) {
 		return;
@@ -217,7 +217,7 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 	for (int s = -1; s < S; s++) {
 		for (int t = 0; t < T; t++) {
 			//a test if
-			//if (s !=-1)continue;
+			//if (s !=0)continue;
 			// fs = f(xs-2, xs-1, xs),  ft = f(xs-1, xs, xs+1)
 			if (s + t == -1)continue;
 			Vector3f fs, ft, connect;
@@ -360,20 +360,25 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					weight += ri;
 				}
 				weight = 1.0f / weight;
+				if (std::isnan(weight) || std::isinf(weight)) {
+					weight = 1.0f;
+				}
 			}
 			Vector3f contribution = (s == -1 ? 1.0f : lightPoints[s]->emission / lightPoints[s]->pdf) * connect * cameraPoints[t]->kd / cameraPoints[t]->pdf;
 
 			float w = useMIS ? (s >= 0 ? weight : 1.0f) : 1.0f / float(s + t + 1 > 1 ? s + t + 1 : 1);
 
-			if ((contribution * w).x > 1.0f) {
-				res = res + Vector3f(0);
-			}
+			//if ((contribution * w).x > 1.0f && (contribution * w).y > 1.0f && (contribution * w).z > 1.0f) {
+			//	res = res + Vector3f(0);
+			//}
 
 			res = res + contribution * w;// / (s + t + 1);
 
+			//if (!(res.x < 1.0f || res.y < 1.0f || res.z < 1.0f)) {
+			//	res =res+ Vector3f(0);
+			//}
 		}
 	}
-
 
 
 	return res;
@@ -400,6 +405,7 @@ void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned
 	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int step) {
 		for (int i = 0; i < width; i++) {
 			for (int j = startRow; j < startRow + step; j++) {
+				//if (abs(i-j)>10)continue;
 				Vector3f dir = (frontDir + (-width / 2 + i) * horizontalStep + (-height / 2 + j) * verticalStep).normalize();
 				Ray ray(eyePos, dir);
 

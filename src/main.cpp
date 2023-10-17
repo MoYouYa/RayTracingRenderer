@@ -43,7 +43,7 @@ void main() {
 	std::vector<unsigned int> plateLightIndices = {0,1,2,3,2,1 };
 	TrangleMesh* plateLight = new TrangleMesh(whiteLightMaterial, &plate, &plateLightIndices);
 
-	std::vector<Vector3f> plateBack = { Vector3f(256 - 32,21,-256 - 32),Vector3f(256 + 32,21,-256 - 32),Vector3f(256 - 32,21,-256 + 32),Vector3f(256 + 32,21,-256 + 32) };
+	std::vector<Vector3f> plateBack = { Vector3f(256 - 36,21,-256 - 32),Vector3f(256 + 36,21,-256 - 32),Vector3f(256 - 36,21,-256 + 32),Vector3f(256 + 36,21,-256 + 32) };
 	std::vector<unsigned int> plateLightBackIndices = { 0,2,1,3,1,2 };
 	TrangleMesh* plateLightBack= new TrangleMesh(whiteDiffuseMaterial, &plateBack, &plateLightBackIndices);
 
@@ -87,7 +87,7 @@ void main() {
 	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
 	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall_test");
 	//renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/plateLight_FacetoWall_BDPT_test");
-	renderer.render(scene, 256, 256, RenderType::BIDIRECTIONAL_PATH_TRACING, 64, "../images/plateLight_FacetoWall_BDPT_MIS_reDistance");
+	renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 16, "../images/plateLight_FacetoWall_BDPT_MIS_reDistance");
 	//renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "../images/plateLight_FacetoWall_BDPT_MIS_onlyPDF");
 	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 16, "../images/plateLight_FacetoWall");
 	//renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 4, "images/sphereLight_BDPT_MIS");
