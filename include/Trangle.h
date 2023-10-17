@@ -69,6 +69,7 @@ public:
 		assert(_posIndices->size() % 3 == 0, "The posIndices is not trangles indices!");
 
 		trangles=std::vector<Object*>(_posIndices->size() / 3);
+		area = 0;
 		for (int i = 0; i <_posIndices->size(); i += 3) {
 			unsigned int index0 = (*_posIndices)[i];
 			unsigned int index1 = (*_posIndices)[i + 1];

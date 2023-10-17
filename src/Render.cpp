@@ -214,38 +214,10 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 	int S = lightPoints.size();
 	int T = cameraPoints.size();
 
-	//precompute the pfs(pfLights,pfCameras) and prs(prLights,prCameras)
-	//std::vector<float> pfLights, pfCameras;
-	//std::vector<float> prLights, prCameras;
-	//if (useMIS) {
-	//	pfLights.emplace_back(lightPoints[0]->pdf);
-	//	if(lightPoints.size()>=2){
-	//		float pdf;
-	//		Vector3f wi = lightPoints[1]->pos - lightPoints[0]->pos;
-	//		float distance = wi.getLen();
-	//		wi = wi.normalize();
-	//		pdf = 1.0f / MY_PI * vec::dotProduct(lightPoints[0]->normal.normalize(), wi) * vec::dotProduct(lightPoints[1]->normal.normalize(), -wi) / distance / distance;
-	//		pfLights.emplace_back(pdf);
-	//	}
-	//	if (lightPoints.size() > 2) {
-	//		for (int i = 2; i < lightPoints.size(); i++) {
-	//			Vector3f wi = (lightPoints[i - 2]->pos - lightPoints[i - 1]->pos).normalize();
-	//			Vector3f wo = lightPoints[i]->pos - lightPoints[i - 1]->pos;
-	//			float distance = wo.getLen();
-	//			wo = wo.normalize();
-	//			Vector3f N = lightPoints[i - 1]->normal.normalize();
-	//			Vector3f N2 = lightPoints[i]->normal.normalize();
-	//			float temp = vec::dotProduct(-wo, N2) / distance / distance;
-	//			float pdf = lightPoints[i - 1]->obj->getMaterial()->pdf(wi, wo, N) * temp * 0.6f;
-	//			pfLights.emplace_back(pdf);
-	//		}
-	//	}
-	//	if(cameraPoints.size())
-
-	//}
-
 	for (int s = -1; s < S; s++) {
 		for (int t = 0; t < T; t++) {
+			//a test if
+			//if (s !=-1)continue;
 			// fs = f(xs-2, xs-1, xs),  ft = f(xs-1, xs, xs+1)
 			if (s + t == -1)continue;
 			Vector3f fs, ft, connect;
@@ -253,6 +225,11 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 
 			Vector3f wi, wo, N;
 			if (s >= 0) {
+				//int a = 0;
+				//if ((lightPoints[s]->pos - cameraPoints[t]->pos).getLen() <= 35.0f) {
+				//	a++;
+				//}
+				//a = 2;
 				if (t > 0) {
 					float distance;
 					wi = (lightPoints[s]->pos - cameraPoints[t]->pos);
@@ -329,13 +306,18 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					normals.emplace_back(cameraPoints[i]->normal.normalize());
 					objs.emplace_back(cameraPoints[i]->obj);
 				}
-				pfs[0] = lightPoints[0]->pdf;
+				if (s > -1) {
+					pfs[0] = lightPoints[0]->pdf;
+				}
+				else {
+					pfs[0] = 1.0f;
+				}
 				{
 					Vector3f dir = (poss[1] - poss[0]);
 					float distance = dir.getLen();
 					dir = dir.normalize();
-					float temp = vec::dotProduct(normals[0], dir) * vec::dotProduct(normals[1], -dir) / distance / distance;
-					pfs[1] = 1.0f / MY_PI * temp;
+					float temp = vec::dotProduct(normals[1], -dir);// / distance / distance;
+					pfs[1] = 1.0f / MY_PI *temp;
 				}
 				for (int i = 2; i < s + t + 2; i++) {
 					Vector3f wi = (poss[i - 2] - poss[i - 1]).normalize();
@@ -344,14 +326,17 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					wo = wo.normalize();
 					Vector3f N = normals[i - 1];
 					Vector3f N2 = normals[i];
-					float temp = vec::dotProduct(-wo, N2) / distance / distance;
+					float temp = vec::dotProduct(-wo, N2);// / distance / distance;
 					pfs[i] = objs[i - 1]->getMaterial()->pdf(wi, wo, N) * temp * 0.6f;
 				}
 
 				prs[s + t + 2 - 1] = 1.0f;
 				{
-					float distance = (poss[s + t + 2 - 1] - poss[s + t + 2 - 2]).getLen();
-					prs[s + t + 2 - 2] = 1.0f / distance / distance;
+					Vector3f dir = (poss[s + t + 2 - 2] - poss[s + t + 2 - 1]);
+					float distance = dir.getLen();
+					dir = dir.normalize();
+					float temp = vec::dotProduct(normals[s + t + 2 - 2], -dir) / distance / distance;
+					prs[s + t + 2 - 2] = 1.0f *temp;
 				}
 				for (int i = 0; i < s + t + 2 - 2; i++) {
 					Vector3f wi = (poss[i + 2] - poss[i + 1]).normalize();
@@ -477,15 +462,21 @@ void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned
 
 	//save this image this file x is downward ,y is towards the right
 	FILE* fp = fopen((fileName + "_" + intToStr(spp) + "spp.ppm").c_str(), "wb");
-	(void)fprintf(fp, "P6\n%d %d\n255\n", height, width);
-	for (auto i = 0; i < height * width; ++i) {
-		static unsigned char color[3];
-		color[0] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].x), 0.6f));
-		color[1] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].y), 0.6f));
-		color[2] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].z), 0.6f));
-		fwrite(color, 1, 3, fp);
+	try {
+		(void)fprintf(fp, "P6\n%d %d\n255\n", height, width);
+		for (auto i = 0; i < height * width; ++i) {
+			static unsigned char color[3];
+			color[0] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].x), 0.6f));
+			color[1] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].y), 0.6f));
+			color[2] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].z), 0.6f));
+			fwrite(color, 1, 3, fp);
+		}
+		fclose(fp);
 	}
-	fclose(fp);
+	catch (std::exception e) {
+		e.what();
+		fclose(fp);
+	}
 
 	std::cout << "render end, spp = " << spp << "\n";
 	auto stop = std::chrono::system_clock::now();
