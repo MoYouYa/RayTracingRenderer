@@ -1,5 +1,25 @@
 #include "Render.h"
 
+void Render::saveFile(std::string fileName, const unsigned int height, const unsigned int width) {
+	//save this image this file x is downward ,y is towards the right
+	FILE* fp = fopen((fileName + ".ppm").c_str(), "wb");
+	try {
+		(void)fprintf(fp, "P6\n%d %d\n255\n", height, width);
+		for (auto i = 0; i < height * width; ++i) {
+			static unsigned char color[3];
+			color[0] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].x), 0.6f));
+			color[1] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].y), 0.6f));
+			color[2] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].z), 0.6f));
+			fwrite(color, 1, 3, fp);
+		}
+		fclose(fp);
+	}
+	catch (std::exception e) {
+		std::cout << e.what();
+		fclose(fp);
+	}
+}
+
 //Vector3f Render::WhittedStylePathTracing(Scene& scene, Ray& ray, unsigned int bounce) {
 //	Vector3f emission(0);
 //
@@ -384,11 +404,12 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 	return res;
 }
 
-void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned int& imageHeight, RenderType renderType, const unsigned int& spp, std::string fileName) {
+void Render::renderPathTracing(Scene& scene, const unsigned int& imageWidth, const unsigned int& imageHeight,  const unsigned int& spp, std::string fileName) {
 	std::cout << "render start, spp = " << spp << "\n";
 	auto start = std::chrono::system_clock::now();
 
-	std::vector<Vector3f>* buffer = new std::vector<Vector3f>(imageWidth * imageHeight);
+	if (buffer != nullptr)delete buffer;
+	buffer = new std::vector<Vector3f>(imageWidth * imageHeight);
 
 	const Camera* camera = scene.getCamera();
 	Vector3f eyePos = camera->position;
@@ -405,35 +426,15 @@ void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned
 	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int step) {
 		for (int i = 0; i < width; i++) {
 			for (int j = startRow; j < startRow + step; j++) {
-				//if (abs(i-j)>10)continue;
 				Vector3f dir = (frontDir + (-width / 2 + i) * horizontalStep + (-height / 2 + j) * verticalStep).normalize();
 				Ray ray(eyePos, dir);
 
-				switch (renderType) {
-					//case RenderType::WHITTED_STYLE_PATH_TRACING:
-					//{
-					//	Vector3f color = WhittedStylePathTracing(scene, ray, 4);
-					//	(*buffer)[i * height + j] = color;
-					//}break;
-				case RenderType::PATH_TRACING:
-				{
-					Vector3f color(0);
-					for (int k = 0; k < spp; k++) {
-						color = color + pathTracing(scene, ray);
-					}
-					color = color / (float)spp;
-					(*buffer)[i * height + j] = color;
-				}break;
-				case RenderType::BIDIRECTIONAL_PATH_TRACING:
-				{
-					Vector3f color(0);
-					for (int k = 0; k < spp; k++) {
-						color = color + bidirectionalPathTracing(scene, ray);
-					}
-					color = color / (float)spp;
-					(*buffer)[i * height + j] = color;
-				}break;
+				Vector3f color(0);
+				for (int k = 0; k < spp; k++) {
+					color = color + pathTracing(scene, ray);
 				}
+				color = color / (float)spp;
+				(*buffer)[i * height + j] = color;
 			}
 		}
 	};
@@ -455,34 +456,69 @@ void Render::render(Scene& scene, const unsigned int& imageWidth, const unsigned
 		threads.emplace_back(std::thread(renderThread, startRow, 1));
 	}
 
-	std::function<std::string(int)> intToStr = [=](int x) {
-		std::string s;
-		while (x) {
-			s.push_back('0' + x % 10);
-			x /= 10;
+	saveFile(fileName, height, width);
+
+	std::cout << "render end, spp = " << spp << "\n";
+	auto stop = std::chrono::system_clock::now();
+	std::cout << "Render complete: \n";
+	std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::hours>(stop - start).count() << " hours\n";
+	std::cout << "          : " << std::chrono::duration_cast<std::chrono::minutes>(stop - start).count() << " minutes\n";
+	std::cout << "          : " << std::chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " seconds\n";
+}
+
+void Render::renderBidirectionalPathTracing(Scene& scene, const unsigned int& imageWidth, const unsigned int& imageHeight, const unsigned int& spp, std::string fileName,bool useMIS) {
+	std::cout << "render start, spp = " << spp << "\n";
+	auto start = std::chrono::system_clock::now();
+
+	if (buffer != nullptr)delete buffer;
+	buffer = new std::vector<Vector3f>(imageWidth * imageHeight);
+
+	const Camera* camera = scene.getCamera();
+	Vector3f eyePos = camera->position;
+	Vector3f frontDir = camera->frontDir;
+	Vector3f upDir = camera->upDir;
+	Vector3f rightDir = vec::crossProduct(frontDir, upDir).normalize();
+	int width = imageWidth;
+	int height = imageHeight;
+	float fov = camera->fov;
+
+	Vector3f verticalStep = tanf(fov / 2.0 / MY_PI / 2.0) * 2.0 / (float)height * upDir;//垂直方向的每一步向量
+	Vector3f horizontalStep = tanf(fov / 2.0 / MY_PI / 2.0) * 2.0 / (float)height * rightDir;//水平方向的每一步向量 
+
+	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int step) {
+		for (int i = 0; i < width; i++) {
+			for (int j = startRow; j < startRow + step; j++) {
+				Vector3f dir = (frontDir + (-width / 2 + i) * horizontalStep + (-height / 2 + j) * verticalStep).normalize();
+				Ray ray(eyePos, dir);
+
+				Vector3f color(0);
+				for (int k = 0; k < spp; k++) {
+					color = color + bidirectionalPathTracing(scene, ray,useMIS);
+				}
+				color = color / (float)spp;
+				(*buffer)[i * height + j] = color;
+			}
 		}
-		reverse(s.begin(), s.end());
-		return s;
 	};
 
-
-	//save this image this file x is downward ,y is towards the right
-	FILE* fp = fopen((fileName + "_" + intToStr(spp) + "spp.ppm").c_str(), "wb");
-	try {
-		(void)fprintf(fp, "P6\n%d %d\n255\n", height, width);
-		for (auto i = 0; i < height * width; ++i) {
-			static unsigned char color[3];
-			color[0] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].x), 0.6f));
-			color[1] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].y), 0.6f));
-			color[2] = (unsigned char)(255 * std::pow(clamp(0, 1, (*buffer)[i].z), 0.6f));
-			fwrite(color, 1, 3, fp);
+	std::vector<std::thread> threads;
+	int maxThreadNum = 16;
+	int step = height / maxThreadNum;
+	int startRow = 0;
+	if (step > 0) {
+		while (startRow < height) {
+			threads.emplace_back(std::thread(renderThread, startRow, step));
+			startRow += step;
 		}
-		fclose(fp);
+		for (int i = 0; i < threads.size(); i++) {
+			threads[i].join();
+		}
 	}
-	catch (std::exception e) {
-		e.what();
-		fclose(fp);
+	else {
+		threads.emplace_back(std::thread(renderThread, startRow, 1));
 	}
+
+	saveFile(fileName, height, width);
 
 	std::cout << "render end, spp = " << spp << "\n";
 	auto stop = std::chrono::system_clock::now();

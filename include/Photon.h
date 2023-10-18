@@ -1,8 +1,9 @@
 #pragma once
-#include "Vector.h"
+#include "Object.h"
 
 struct Photon {
+	Object* obj;
 	Vector3f pos;
-	Vector3f emission;
+	Vector3f power;
 	Vector3f wi;
 };

@@ -61,9 +61,9 @@ void main() {
 
 	Scene scene(camera);
 
-	//scene.addObject((Object*)sphereLight);
-	scene.addObject((Object*)plateLight);
-	scene.addObject((Object*)plateLightBack);
+	scene.addObject((Object*)sphereLight);
+	//scene.addObject((Object*)plateLight);
+	//scene.addObject((Object*)plateLightBack);
 
 	scene.addObject((Object*)Back);
 	scene.addObject((Object*)Top);
@@ -84,15 +84,9 @@ void main() {
 	scene.rebuildBVH();
 
 	Render renderer;
-	//renderer.render(scene, 1024,1024, RenderType::BIDIRECTIONAL_PATH_TRACING,32,"images/plateLight_BDPT");
-	//renderer.render(scene, 1024, 1024, RenderType::PATH_TRACING, 1, "images/plateLight_FacetoWall_test");
-	//renderer.render(scene, 1024, 1024, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "images/plateLight_FacetoWall_BDPT_test");
-	renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 16, "../images/plateLight_FacetoWall_BDPT_MIS_reDistance");
-	//renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 32, "../images/plateLight_FacetoWall_BDPT_MIS_onlyPDF");
-	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 16, "../images/plateLight_FacetoWall");
-	//renderer.render(scene, 512, 512, RenderType::BIDIRECTIONAL_PATH_TRACING, 4, "images/sphereLight_BDPT_MIS");
-	//renderer.render(scene, 512, 512, RenderType::PATH_TRACING, 4, "images/sphereLight");
 
+	renderer.renderPathTracing(scene, 512, 512, 1, "../images/test0");
+	renderer.renderBidirectionalPathTracing(scene, 512, 512, 1, "../images/test1",true);
 
 
 

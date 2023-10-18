@@ -16,3 +16,13 @@ static inline float getRandomFloat() {
 {
 	return std::max(lo, std::min(hi, v));
 }
+
+ static std::string intToStr(int x) {
+	 std::string s;
+	 while (x) {
+		 s.push_back('0' + x % 10);
+		 x /= 10;
+	 }
+	 reverse(s.begin(), s.end());
+	 return s;
+ };
