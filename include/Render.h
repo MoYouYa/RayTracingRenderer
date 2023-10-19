@@ -139,9 +139,9 @@ private:
 			xmin = xmin < p->pos.x ? xmin : p->pos.x;
 			ymin = ymin < p->pos.y ? ymin : p->pos.y;
 			zmin = zmin < p->pos.z ? zmin : p->pos.z;
-			xmax = xmax < p->pos.x ? xmax : p->pos.x;
-			ymax = ymax < p->pos.y ? ymax : p->pos.y;
-			zmax = zmax < p->pos.z ? zmax : p->pos.z;
+			xmax = xmax > p->pos.x ? xmax : p->pos.x;
+			ymax = ymax > p->pos.y ? ymax : p->pos.y;
+			zmax = zmax > p->pos.z ? zmax : p->pos.z;
 		}
 		float xlen = xmax - xmin;
 		float ylen = ymax - ymin;
@@ -153,6 +153,7 @@ private:
 				std::sort(photonMap->begin(), photonMap->end(), [=](Photon* a, Photon* b) {
 					return a->pos.x < b->pos.x;
 				});
+				//std::cout << "cut by x\n";
 			}
 			break;
 			case 2:
@@ -160,6 +161,7 @@ private:
 				std::sort(photonMap->begin(), photonMap->end(), [=](Photon* a, Photon* b) {
 					return a->pos.y < b->pos.y;
 				});
+				//std::cout << "cut by y\n";
 			}
 			break;
 			case 3:
@@ -167,6 +169,7 @@ private:
 				std::sort(photonMap->begin(), photonMap->end(), [=](Photon* a, Photon* b) {
 					return a->pos.z < b->pos.z;
 				});
+				//std::cout << "cut by z\n";
 			}
 			break;
 		}
@@ -338,7 +341,7 @@ public:
 		std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int endRow) {
 			for (int i = 0; i < width; i++) {
 				for (int j = startRow; j < endRow; j++) {
-					//if (abs(i-j)>1)continue;
+					//if (abs(i-j)>0)continue;
 					Vector3f dir = (frontDir + (-width / 2 + i) * horizontalStep + (-height / 2 + j) * verticalStep).normalize();
 					Ray ray(eyePos, dir);
 
