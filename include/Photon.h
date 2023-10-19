@@ -1,9 +1,34 @@
 #pragma once
-#include "Object.h"
+#include "Bound3.h"
 
 struct Photon {
-	Object* obj;
 	Vector3f pos;
-	Vector3f power;
 	Vector3f wi;
+	Vector3f power;
 };
+
+struct CmpPhotonDis {
+	Photon* photon;
+	float dis2;
+	CmpPhotonDis(Photon* _photon = nullptr, float _dis2 = 0.0f) {
+		photon = _photon;
+		dis2 = _dis2;
+	}
+
+	friend bool operator>(CmpPhotonDis a, CmpPhotonDis b) {
+		return a.dis2 > b.dis2;
+	}
+
+	friend bool operator<(CmpPhotonDis a, CmpPhotonDis b) {
+		return a.dis2 < b.dis2;
+	}
+};
+
+struct KDTree {
+	Photon* photon;
+	Bound3 bound;
+	KDTree* left;
+	KDTree* right;
+	KDTree() { photon = nullptr; left = nullptr; right = nullptr;}
+};
+

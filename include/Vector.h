@@ -23,9 +23,11 @@ public:
 
 	friend Vector2f operator*(const float& n, const Vector2f& v) { return Vector2f(n * v.x, n * v.y); }
 
-	float getLen() { return std::sqrtf(x * x + y * y); }
+	float getLen()const { return std::sqrtf(x * x + y * y); }
 
-	Vector2f normalize() {
+	float norm()const { return x * x + y * y; }
+
+	Vector2f normalize() const{
 		float len = getLen();
 		return Vector2f(x / len, y / len);
 	}
@@ -55,6 +57,9 @@ public:
 	friend Vector3f operator*(const float& n, const Vector3f& v) { return Vector3f(n * v.x, n * v.y, n * v.z); }
 
 	float getLen() const { return std::sqrtf(x * x + y * y + z * z); }
+
+	//get vector lenght square
+	float norm()const { return x * x + y * y + z * z; }
 
 	Vector3f normalize() const {
 		float len = getLen();
@@ -86,9 +91,11 @@ public:
 
 	friend Vector4f operator*(const float& n, const Vector4f& v) { return Vector4f(n * v.x, n * v.y, n * v.z, n * v.w); }
 
-	float getLen() { return std::sqrtf(x * x + y * y + z * z + w * w); }
+	float getLen()const { return std::sqrtf(x * x + y * y + z * z + w * w); }
 
-	Vector4f normalize() {
+	float norm()const { return x * x + y * y + z * z + w * w; }
+
+	Vector4f normalize() const {
 		float len = getLen();
 		return Vector4f(x / len, y / len, z / len, w / len);
 	}

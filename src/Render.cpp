@@ -251,16 +251,16 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 				//}
 				//a = 2;
 				if (t > 0) {
-					float distance;
+					float distance2;
 					wi = (lightPoints[s]->pos - cameraPoints[t]->pos);
-					distance = wi.getLen();
+					distance2 = wi.norm();
 					wi = wi.normalize();
 					wo = (cameraPoints[t - 1]->pos - cameraPoints[t]->pos).normalize();
 					N = cameraPoints[t]->normal.normalize();
 
 					ft = cameraPoints[t]->obj->getMaterial()->eval(wi, wo, N);
 					if (scene.checkConnectable(lightPoints[s]->pos, cameraPoints[t]->pos)) {
-						g /= distance * distance;
+						g /= distance2;
 						g *= std::max(vec::dotProduct(lightPoints[s]->normal.normalize(), -wi), 0.0001f);
 						g *= std::max(vec::dotProduct(cameraPoints[t]->normal.normalize(), wi), 0.0001f);
 					}
@@ -269,13 +269,13 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					}
 				}
 				else {
-					float distance;
+					float distance2;
 					wi = (lightPoints[s]->pos - cameraPoints[t]->pos);
-					distance = wi.getLen();
+					distance2 = wi.norm();
 
 					ft = std::powf(vec::dotProduct(wi, cameraPoints[t]->normal.normalize()), 2.0f);
 					if (scene.checkConnectable(lightPoints[s]->pos, cameraPoints[t]->pos)) {
-						g /= distance * distance;
+						g /= distance2;
 						g *= std::max(vec::dotProduct(lightPoints[s]->normal.normalize(), -wi), 0.0001f);
 					}
 					else {
@@ -288,8 +288,8 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 					connect = cameraPoints[t]->obj->getMaterial()->getEmission();
 					//别忘了距离衰减项
 					if (t > 1) {
-						float distance = (cameraPoints[t]->pos - cameraPoints[t - 1]->pos).getLen();
-						connect = connect / distance / distance;
+						float distance2 = (cameraPoints[t]->pos - cameraPoints[t - 1]->pos).norm();
+						connect = connect / distance2;
 					}
 				}
 				else {
@@ -334,7 +334,7 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 				}
 				{
 					Vector3f dir = (poss[1] - poss[0]);
-					float distance = dir.getLen();
+					//float distance = dir.getLen();
 					dir = dir.normalize();
 					float temp = vec::dotProduct(normals[1], -dir);// / distance / distance;
 					pfs[1] = 1.0f / MY_PI *temp;
@@ -342,7 +342,7 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 				for (int i = 2; i < s + t + 2; i++) {
 					Vector3f wi = (poss[i - 2] - poss[i - 1]).normalize();
 					Vector3f wo = poss[i] - poss[i - 1];
-					float distance = wo.getLen();
+					//float distance = wo.getLen();
 					wo = wo.normalize();
 					Vector3f N = normals[i - 1];
 					Vector3f N2 = normals[i];
@@ -353,19 +353,19 @@ Vector3f Render::bidirectionalPathTracing(Scene& scene, Ray& ray, bool useMIS) {
 				prs[s + t + 2 - 1] = 1.0f;
 				{
 					Vector3f dir = (poss[s + t + 2 - 2] - poss[s + t + 2 - 1]);
-					float distance = dir.getLen();
+					float distance2 = dir.norm();
 					dir = dir.normalize();
-					float temp = vec::dotProduct(normals[s + t + 2 - 2], -dir) / distance / distance;
+					float temp = vec::dotProduct(normals[s + t + 2 - 2], -dir) / distance2;
 					prs[s + t + 2 - 2] = 1.0f *temp;
 				}
 				for (int i = 0; i < s + t + 2 - 2; i++) {
 					Vector3f wi = (poss[i + 2] - poss[i + 1]).normalize();
 					Vector3f wo = (poss[i] - poss[i + 1]);
-					float distance = wo.getLen();
+					float distance2 = wo.norm();
 					wo = wo.normalize();
 					Vector3f N = normals[i + 1];
 					Vector3f N2 = normals[i];
-					float temp = vec::dotProduct(-wo, N2) / distance / distance;
+					float temp = vec::dotProduct(-wo, N2) / distance2;
 					prs[i] = objs[i + 1]->getMaterial()->pdf(wi, wo, N) * temp * 0.6f;
 				}
 
@@ -423,9 +423,9 @@ void Render::renderPathTracing(Scene& scene, const unsigned int& imageWidth, con
 	Vector3f verticalStep = tanf(fov / 2.0 / MY_PI / 2.0) * 2.0 / (float)height * upDir;//垂直方向的每一步向量
 	Vector3f horizontalStep = tanf(fov / 2.0 / MY_PI / 2.0) * 2.0 / (float)height * rightDir;//水平方向的每一步向量 
 
-	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int step) {
+	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int endRow) {
 		for (int i = 0; i < width; i++) {
-			for (int j = startRow; j < startRow + step; j++) {
+			for (int j = startRow; j < endRow; j++) {
 				Vector3f dir = (frontDir + (-width / 2 + i) * horizontalStep + (-height / 2 + j) * verticalStep).normalize();
 				Ray ray(eyePos, dir);
 
@@ -444,16 +444,18 @@ void Render::renderPathTracing(Scene& scene, const unsigned int& imageWidth, con
 	int step = height / maxThreadNum;
 	int startRow = 0;
 	if (step > 0) {
-		while (startRow < height) {
-			threads.emplace_back(std::thread(renderThread, startRow, step));
-			startRow += step;
+		for (int i = 0; i < maxThreadNum - 1; i++) {
+			threads.emplace_back(std::thread(renderThread, i*step, i*step+step));
 		}
-		for (int i = 0; i < threads.size(); i++) {
+		threads.emplace_back(std::thread(renderThread, (maxThreadNum-1)*step, height));
+
+		for (int i = 0; i < maxThreadNum; i++) {
 			threads[i].join();
 		}
 	}
 	else {
 		threads.emplace_back(std::thread(renderThread, startRow, 1));
+		threads[0].join();
 	}
 
 	saveFile(fileName, height, width);
@@ -485,9 +487,9 @@ void Render::renderBidirectionalPathTracing(Scene& scene, const unsigned int& im
 	Vector3f verticalStep = tanf(fov / 2.0 / MY_PI / 2.0) * 2.0 / (float)height * upDir;//垂直方向的每一步向量
 	Vector3f horizontalStep = tanf(fov / 2.0 / MY_PI / 2.0) * 2.0 / (float)height * rightDir;//水平方向的每一步向量 
 
-	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int step) {
+	std::function<void(unsigned int, unsigned int)> renderThread = [&](unsigned int startRow, unsigned int endRow) {
 		for (int i = 0; i < width; i++) {
-			for (int j = startRow; j < startRow + step; j++) {
+			for (int j = startRow; j < endRow; j++) {
 				Vector3f dir = (frontDir + (-width / 2 + i) * horizontalStep + (-height / 2 + j) * verticalStep).normalize();
 				Ray ray(eyePos, dir);
 
@@ -506,16 +508,18 @@ void Render::renderBidirectionalPathTracing(Scene& scene, const unsigned int& im
 	int step = height / maxThreadNum;
 	int startRow = 0;
 	if (step > 0) {
-		while (startRow < height) {
-			threads.emplace_back(std::thread(renderThread, startRow, step));
-			startRow += step;
+		for (int i = 0; i < maxThreadNum - 1; i++) {
+			threads.emplace_back(std::thread(renderThread, i * step, i * step + step));
 		}
-		for (int i = 0; i < threads.size(); i++) {
+		threads.emplace_back(std::thread(renderThread, (maxThreadNum - 1) * step, height));
+
+		for (int i = 0; i < maxThreadNum; i++) {
 			threads[i].join();
 		}
 	}
 	else {
 		threads.emplace_back(std::thread(renderThread, startRow, 1));
+		threads[0].join();
 	}
 
 	saveFile(fileName, height, width);
