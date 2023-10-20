@@ -55,4 +55,7 @@ public:
 	*/
 	void renderPhotonMapping(Scene& scene, const unsigned int& imageWidth, const unsigned int& imageHeight, const unsigned int& photonNum, const unsigned int& checkNum, std::string fileName);
 
+	~Render() {
+		delete buffer;
+	}
 };

@@ -824,4 +824,10 @@ void Render::renderPhotonMapping(Scene& scene, const unsigned int& imageWidth, c
 	std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::hours>(stop - start).count() << " hours\n";
 	std::cout << "          : " << std::chrono::duration_cast<std::chrono::minutes>(stop - start).count() << " minutes\n";
 	std::cout << "          : " << std::chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " seconds\n";
+
+	clearKDTree(kdTree);
+	for (Photon* p : *photonMap) {
+		delete p;
+	}
+	delete photonMap;
 }

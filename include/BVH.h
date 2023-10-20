@@ -11,6 +11,7 @@ struct BVHNode {
 	Object* object;
 	BVHNode* left;
 	BVHNode* right;
+	
 	BVHNode(Bound3 _bound=Bound3(), Object* obj = nullptr, BVHNode* l = nullptr, BVHNode* r = nullptr) {
 		bound = _bound;
 		object = obj;

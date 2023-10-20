@@ -89,20 +89,12 @@ Vector3f Material::eval(const Vector3f& wi, const Vector3f& wo, const Vector3f& 
 		float cosi = vec::dotProduct(wi.normalize(), normal.normalize());
 		res = ks * (kr * d * g / 4.0f / std::max(coso * cosi, 0.0001f)) + kd * (1 - kr) / MY_PI;
 
-		//if(std::isnan(res.x)){
-		//	TEST::printVector3f(res);
-		//	float cosValue = vec::dotProduct(wo.normalize(), normal.normalize());
-		//	res = kd * (cosValue > 0.0f ? 1.0f / MY_PI : 0.0f);
-		//	TEST::printVector3f(res);
-		//}
-
 	}break;
 	}
 	return res;
 }
 
 Vector3f Material::sample(const Vector3f& wi, const Vector3f& normal) const {
-	//assert(type != MaterialType::GLOSSY, "this material is not supported!");
 	Vector3f wo;
 	std::function<Vector3f(const Vector3f&, const Vector3f)> toWorld = [=](const Vector3f& local, const Vector3f& normal) {
 		Vector3f B, C;

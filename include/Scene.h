@@ -8,7 +8,9 @@ struct Camera {
 	Vector3f frontDir;
 	Vector3f upDir;
 	float fov;
+	
 	Camera() = delete;
+	
 	Camera(Vector3f _position, Vector3f _frontDir, Vector3f _upDir, float _fov) {
 		position = _position;
 		frontDir = _frontDir;
@@ -23,11 +25,11 @@ private:
 	Camera* camera;
 	std::vector<Object*> objects;
 	std::vector<Object*> lights;
-
 	BVH* bvh;
 
 public:
 	Scene() = delete;
+	
 	Scene(Camera* _camera) { camera = _camera; bvh = new BVH(); }
 
 	const Camera* getCamera() { return camera; }
@@ -58,6 +60,11 @@ public:
 
 	//sampling at light direction
 	void samplingLight(Intersection& inter, float& pdf);
+
+	~Scene() {
+		bvh->~BVH();
+		delete bvh;
+	}
 };
 
 

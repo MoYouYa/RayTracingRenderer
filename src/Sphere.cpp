@@ -39,14 +39,6 @@ Intersection Sphere::intersect(const Ray& ray) {
 }
 
 void Sphere::sample(Intersection& inter, float& pdf) {
-	//float alph = getRandomFloat() * 2.0 * MY_PI;
-	//float theta = getRandomFloat() * MY_PI;
-	//Vector3f dir(std::cosf(alph) * std::cosf(theta), std::sinf(theta), std::sinf(alph) * std::cosf(theta));
-	//inter.postion = center + dir * radius;
-	//inter.normal = dir;
-	//inter.object = this;
-	//pdf = 1.0 / area;
-
 	float theta = 2.0 * MY_PI * getRandomFloat(), phi = MY_PI * getRandomFloat();
 	Vector3f dir(std::cos(phi), std::sin(phi) * std::cos(theta), std::sin(phi) * std::sin(theta));
 	inter.postion = center + radius * dir;

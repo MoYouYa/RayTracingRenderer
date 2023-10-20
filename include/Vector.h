@@ -21,6 +21,16 @@ public:
 
 	Vector2f operator/(const float& n)const {return Vector2f(x / n, y / n);}
 
+	Vector2f operator+=(const Vector2f& v2) { *this = *this + v2; return *this; }
+
+	Vector2f operator-=(const Vector2f& v2) { *this = *this - v2; return *this; }
+
+	Vector2f operator*=(const float& n) { *this = *this * n; return *this; }
+
+	Vector2f operator*=(const Vector2f& v2) { *this = *this * v2; return *this; }
+
+	Vector2f operator/=(const float& n) { *this = *this / n; return *this; }
+
 	friend Vector2f operator*(const float& n, const Vector2f& v) { return Vector2f(n * v.x, n * v.y); }
 
 	float getLen()const { return std::sqrtf(x * x + y * y); }
@@ -53,6 +63,16 @@ public:
 	Vector3f operator*(const Vector3f v3)const {return Vector3f(x * v3.x, y * v3.y, z * v3.z);}
 
 	Vector3f operator/(const float n)const {return Vector3f(x / n, y / n, z / n);}
+
+	Vector3f operator+=(const Vector3f& v3) { *this = *this + v3; return *this; }
+
+	Vector3f operator-=(const Vector3f& v3) { *this = *this - v3; return *this; }
+
+	Vector3f operator*=(const float& n) { *this = *this * n; return *this; }
+
+	Vector3f operator*=(const Vector3f& v3) { *this = *this * v3; return *this; }
+
+	Vector3f operator/=(const float& n) { *this = *this / n; return *this; }
 
 	friend Vector3f operator*(const float& n, const Vector3f& v) { return Vector3f(n * v.x, n * v.y, n * v.z); }
 
@@ -88,6 +108,16 @@ public:
 	Vector4f operator*(const Vector4f v4) const {return Vector4f(x * v4.x, y * v4.y, z * v4.z, w * v4.w);}
 
 	Vector4f operator/(const float n) const {return Vector4f(x / n, y / n, z / n, w / n);}
+
+	Vector4f operator+=(const Vector4f& v4) { *this = *this + v4; return *this; }
+
+	Vector4f operator-=(const Vector4f& v4) { *this = *this - v4; return *this; }
+
+	Vector4f operator*=(const float& n) { *this = *this * n; return *this; }
+
+	Vector4f operator*=(const Vector4f& v4) { *this = *this * v4; return *this; }
+
+	Vector4f operator/=(const float& n) { *this = *this / n; return *this; }
 
 	friend Vector4f operator*(const float& n, const Vector4f& v) { return Vector4f(n * v.x, n * v.y, n * v.z, n * v.w); }
 

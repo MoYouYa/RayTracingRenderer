@@ -10,6 +10,7 @@ struct Intersection {
 	Vector3f normal;
 	Vector2f textureCoord;
 	Object* object;
+	
 	Intersection() { 
 		hit = false;
 		distance = 0;
@@ -23,7 +24,9 @@ struct LightPoint {
 	Vector3f normal;
 	Vector3f emission;
 	float pdf;
+	
 	LightPoint() { obj = nullptr; pdf = 0; }
+	
 	LightPoint(Object* _obj,const Vector3f& _pos,const Vector3f& _normal,const Vector3f& _emission,const float& _pdf) {
 		obj = _obj;
 		pos = _pos;
@@ -39,7 +42,9 @@ struct CameraPoint {
 	Vector3f normal;
 	Vector3f kd;
 	float pdf;
+	
 	CameraPoint() { obj = nullptr; pdf = 0; }
+	
 	CameraPoint(Object* _obj, const Vector3f& _pos, const Vector3f& _normal, const Vector3f& _kd, const float& _pdf) { 
 		obj = _obj;
 		pos = _pos;

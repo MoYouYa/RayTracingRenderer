@@ -49,6 +49,7 @@ private:
 	void fresnel(const Vector3f& I, const Vector3f& N, const float& ior, float& kr) const;
 public:
 	Material() = delete;
+	
 	Material(MaterialType _type, Vector3f _emission, Vector3f _kd = Vector3f(0), Vector3f _ks = Vector3f(0), float _ior = 1e-5,float _roughness=1e-5, float _specularExponent = 32) {
 		type = _type;
 		emission = _emission;
@@ -60,12 +61,19 @@ public:
 	}
 
 	MaterialType getMaterialType()const { return type; }
+	
 	bool hasEmission()const { return emission.x > 1e-4 || emission.y > 1e-4 || emission.z > 1e-4; }
+	
 	Vector3f getEmission()const { return emission; }
+	
 	Vector3f getKd()const { return kd; }
+	
 	Vector3f getKs()const { return ks; }
+	
 	float getIor()const { return ior; }
+	
 	float getRoughness()const { return roughness; }
+	
 	float getSpecularExponent()const { return specularExponent; }
 
 	//this wi is pointing to the target point

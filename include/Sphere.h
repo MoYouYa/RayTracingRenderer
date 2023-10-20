@@ -12,6 +12,7 @@ private:
 
 public:
 	Sphere() = delete;
+	
 	Sphere(Material* _material,Vector3f _center, float _radius):Object(_material) {
 		center = _center;
 		radius = _radius > 0 ? _radius : 0;

@@ -86,7 +86,7 @@ void main() {
 	Render renderer;
 
 	renderer.renderPhotonMapping(scene, 512, 512, 1000000, 10, "../images/PhotonMapping/test_1000000_10");
-
+	renderer.renderPhotonMapping(scene, 512, 512, 1000000, 10, "../images/PhotonMapping/test_1000000_100");
 	//renderer.renderPathTracing(scene, 512, 512, 1, "../images/test0");
 	//renderer.renderBidirectionalPathTracing(scene, 512, 512, 1, "../images/test1",true);
 

@@ -10,6 +10,7 @@ struct Photon {
 struct CmpPhotonDis {
 	Photon* photon;
 	float dis2;
+	
 	CmpPhotonDis(Photon* _photon = nullptr, float _dis2 = 0.0f) {
 		photon = _photon;
 		dis2 = _dis2;
@@ -29,6 +30,17 @@ struct KDTree {
 	Bound3 bound;
 	KDTree* left;
 	KDTree* right;
+	
 	KDTree() { photon = nullptr; left = nullptr; right = nullptr;}
+};
+
+static void clearKDTree(KDTree* root) {
+	if (root == nullptr)return;
+	if (root->left == nullptr && root->right == nullptr) {
+		delete root;
+		return;
+	}
+	clearKDTree(root->left);
+	clearKDTree(root->right);
 };
 

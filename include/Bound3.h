@@ -8,6 +8,7 @@ public:
 
 	//get a error bound which's min bigger than max
 	Bound3() { min = Vector3f(std::numeric_limits<float>::max()); max = Vector3f(std::numeric_limits<float>::lowest()); }
+	
 	Bound3(Vector3f _min, Vector3f _max) { min = _min; max = _max; }
 
 	Bound3& merge(const Bound3& b) {
